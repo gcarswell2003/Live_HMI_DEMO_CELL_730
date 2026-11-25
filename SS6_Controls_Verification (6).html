@@ -1,0 +1,2151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cell 730 · SS6 Operator Panel</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font: 16px/1.35 "Segoe UI", Arial, sans-serif;
+      color: #14253a;
+      background: #e8edf1;
+      --muted: #4d6074;
+      --line: #c8d3df;
+      --light: #f3f6f9;
+      --blue: #174e75;
+      --green: #147341;
+      --red: #ab252d;
+      --amber: #825700;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; }
+    button, input, select { font: inherit; color: inherit; }
+    button, input, select, summary { touch-action: manipulation; }
+    button {
+      min-height: 54px; padding: 8px 14px; border: 1px solid #7f95ab; border-radius: 4px;
+      background: linear-gradient(#f9fbfd,#e0e9f1); color: #173651; cursor: pointer;
+      font-weight: 800; box-shadow: inset 0 1px #ffffff9a, 0 1px 1px #203f6430;
+    }
+    button:hover:not(:disabled) { filter: brightness(1.06); }
+    button:active:not(:disabled) { box-shadow: inset 0 2px 3px #172e4550; }
+    button.primary, button.start, button.estop, button.motion-stop { color: #fff; }
+    button.primary { background: linear-gradient(#3479ac,#184f7a); border-color: #174368; }
+    button.start { background: linear-gradient(#239659,#126c3b); border-color: #0a5730; }
+    button.motion-stop { background: linear-gradient(#ac414a,#8c2932); border-color: #75252b; }
+    button.estop { background: linear-gradient(#c7323b,#a41d27); border-color: #79141c; }
+    button.release { color: #861921; background: #fff2f2; border-color: #c5787d; }
+    button[aria-pressed="true"] { color: #164c70; background: #e3f2fd; border-color: #23608c; }
+    button:disabled { color: #5a6877; background: #e9edf1; border-color: #d2dbe3; cursor: default; box-shadow: none; }
+    input, select {
+      min-width: 0; width: 100%; min-height: 46px; padding: 7px 9px;
+      background: #fff; border: 1px solid #94a8bc; border-radius: 4px;
+    }
+    input:read-only { background: #eff3f7; }
+    input:disabled, select:disabled { background: #edf1f5; color: #66717c; }
+    select {
+      appearance: none; padding-right: 26px;
+      background-image: linear-gradient(45deg, transparent 50%, #334b63 50%), linear-gradient(135deg, #334b63 50%, transparent 50%);
+      background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+      background-size: 5px 5px; background-repeat: no-repeat;
+    }
+    :focus-visible { outline: 3px solid #1565ad; outline-offset: 2px; }
+    h1, h2, h3, p, ol, dl { margin: 0; }
+    h1 { font-size: 24px; line-height: 1.04; }
+    h2 { font-size: 22px; line-height: 1.15; }
+    h3 { font-size: 15px; }
+    [hidden] { display: none !important; }
+    .muted { color: var(--muted); }
+    .small { font-size: 14px; }
+    .micro { font-size: 13px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .spread { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .numbers { font-variant-numeric: tabular-nums; }
+    .stage {
+      height: 100vh; height: 100dvh; width: 100%;
+      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      container-type: size;
+      display: grid; place-items: center; background: #202930;
+    }
+    .frame {
+      /* Published CM5-T10W active area and front outline, in millimeters. */
+      --screen-width: 222.72;
+      --screen-height: 125.28;
+      --bezel-width: 268.2;
+      --bezel-height: 195.9;
+      --model-width: var(--screen-width);
+      --model-height: var(--screen-height);
+      --fit-width: min(100cqw, calc(100cqh * var(--model-width) / var(--model-height)));
+      width: var(--fit-width);
+      aspect-ratio: var(--model-width) / var(--model-height);
+      position: relative;
+    }
+    .frame[data-size="actual"] {
+      width: min(var(--fit-width), calc(var(--px-per-mm) * var(--model-width)));
+    }
+    .frame[data-bezel="true"] {
+      --model-width: var(--bezel-width);
+      --model-height: var(--bezel-height);
+      --bezel-x: calc((1 - var(--screen-width) / var(--bezel-width)) * 50%);
+      --bezel-y: calc((1 - var(--screen-height) / var(--bezel-height)) * 50%);
+      border-radius: 10px;
+      background: linear-gradient(150deg, #40494f, #2d353d 35%, #242c34);
+      box-shadow: inset 0 0 0 2px #53606a;
+    }
+    .bezel-label {
+      display: none; position: absolute; inset: auto var(--bezel-x) calc(100% - var(--bezel-y) + 10px);
+      align-items: center; justify-content: space-between; gap: 8px;
+      color: #eef3f6; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    }
+    .frame[data-bezel="true"] .bezel-label { display: flex; }
+    .display {
+      --edge: clamp(10px, 2cqw, 32px);
+      position: absolute; inset: 0;
+      display: grid; grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      background: #fff; overflow: hidden;
+    }
+    .frame[data-bezel="true"] .display {
+      inset: var(--bezel-y) var(--bezel-x);
+      outline: 2px solid #17202a;
+    }
+    .topbar {
+      display: grid; grid-template-columns: 254px 188px minmax(0, 1fr) 206px; align-items: center;
+      gap: 8px; text-align: center;
+      padding: 5px 14px; background: #fff; border-top: 4px solid var(--blue);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar > * { min-width: 0; }
+    .identity { display: flex; align-items: center; justify-content: center; gap: 10px; white-space: nowrap; }
+    .identity > div { flex: none; }
+    .identity .line { border-left: 1px solid #b9c7d4; padding-left: 10px; }
+    .identity small { display: block; font-weight: 650; color: var(--muted); font-size: 13px; }
+    .identity strong { font-size: 14px; }
+    .screen-actions { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 5px; }
+    .playback-control {
+      display: grid; grid-template-columns: auto minmax(0, 1fr) 4ch; align-items: center; gap: 10px;
+      padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--light);
+    }
+    .playback-control input {
+      -webkit-appearance: none; appearance: none; height: 52px; margin: 0; padding: 0;
+      border: 0; background: transparent; cursor: pointer;
+    }
+    .playback-control input::-webkit-slider-runnable-track {
+      height: 14px; border: 1px solid #91a7bc; border-radius: 8px; background: #d7e5f0;
+    }
+    .playback-control input::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 32px; height: 32px; margin-top: -10px;
+      border: 2px solid #0c3b5e; border-radius: 50%; background: #22658f; box-shadow: inset 0 0 0 3px #ffffff36;
+    }
+    .playback-control input::-moz-range-track {
+      height: 12px; border: 1px solid #91a7bc; border-radius: 8px; background: #d7e5f0;
+    }
+    .playback-control input::-moz-range-thumb {
+      box-sizing: border-box; width: 32px; height: 32px;
+      border: 2px solid #0c3b5e; border-radius: 50%; background: #22658f; box-shadow: inset 0 0 0 3px #ffffff36;
+    }
+    #speed-value { text-align: center; color: var(--blue); font-size: 16px; font-weight: 800; }
+    .display-size { font-size: 13px; min-height: 54px; padding-inline: 7px; }
+    .mode {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 5px 4px; border-radius: 4px;
+      background: #f4f0e6; color: #694900; border: 1px solid #d7c18a; font-size: 12px; font-weight: 800;
+    }
+    .mode[data-state="running"] { background: #e5f4eb; border-color: #90c7a6; color: #085732; }
+    .mode[data-state="faulted"] { background: #fcebec; border-color: #d48d91; color: #8c131c; }
+    .view {
+      min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain;
+      padding: clamp(10px, 2.5cqh, 22px) var(--edge); scrollbar-gutter: stable;
+    }
+    .page-title { margin-bottom: 12px; }
+    #plc .page-title { text-align: center; }
+    .panel { background: #fff; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px 11px; }
+    .panel h3 { margin-bottom: 6px; }
+    .lamps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .lamp {
+      display: flex; align-items: center; gap: 5px; padding: 7px 6px; min-height: 39px;
+      border: 1px solid #d4dce5; border-radius: 4px; background: var(--light);
+      color: #4c5f71; font-weight: 700; font-size: 14px; white-space: nowrap;
+    }
+    .dot { display: inline-block; flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: #a5b2bf; border: 1px solid #8796a6; }
+    .lamp.on { background: #f9f0d7; border-color: #dec578; color: #684900; }
+    .lamp.on .dot { background: #e9aa31; border-color: #9d6b14; box-shadow: 0 0 0 2px #e9aa3129; }
+    .lamp[data-state="running"].on { background: #e4f3e9; border-color: #91c7a9; color: #0b5632; }
+    .lamp[data-state="running"].on .dot { background: #29a960; border-color: #06773d; box-shadow: 0 0 0 2px #29a96033; }
+    .lamp[data-state="faulted"].on, .lamp[data-state="estop"].on { background: #fcebec; border-color: #d98e94; color: #861820; }
+    .lamp[data-state="faulted"].on .dot, .lamp[data-state="estop"].on .dot { background: #d73138; border-color: #9f1119; box-shadow: 0 0 0 2px #d7313827; }
+    .counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .count { background: var(--light); border: 1px solid #d5dfe9; border-radius: 4px; padding: 4px 8px; }
+    .count dt { color: var(--muted); font-size: 13px; font-weight: 650; }
+    .count dd { margin: 0; font-weight: 800; font-size: 24px; line-height: 1.1; }
+    .count.qc { background: #edf6fc; border-color: #c8ddeb; }
+    .message {
+      border-top: 1px solid var(--line); background: #f0f5fa; min-height: 32px; padding: 6px var(--edge);
+      max-height: 4.75em; overflow: auto;
+      font-size: 14px; color: #273f57; overflow-wrap: anywhere;
+    }
+    .message.good { background: #eaf5ed; color: #124e30; }
+    .message.bad { background: #fcecee; color: #81242b; }
+    .message.warn { background: #fbf3de; color: #644600; }
+    .nav {
+      display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px;
+      padding: 6px 8px; background: #d1dce8; border-top: 2px solid #8196a8;
+    }
+    .nav button { min-width: 0; min-height: 58px; }
+    .nav button[aria-current="page"] {
+      color: #fff; background: linear-gradient(#245d8d,#164875);
+      border-color: #15436b; box-shadow: inset 0 2px 3px #112d4d55;
+    }
+    .nav button:focus-visible { outline-offset: -4px; }
+    .picker {
+      display: grid; grid-template-columns: minmax(145px, 1fr) minmax(155px, 1fr) minmax(135px, 1fr);
+      align-items: end; gap: 8px; margin-bottom: 10px; background: #f2f6fa;
+    }
+    .picker p { padding-bottom: 6px; }
+    label { display: grid; align-content: start; gap: 3px; color: #2e445a; font-weight: 650; font-size: 14px; min-width: 0; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px 8px; }
+    .field-grid .wide { grid-column: 1/-1; }
+    .editor-actions { margin-bottom: 8px; }
+    .editor-actions h3 { font-size: 16px; }
+    .details-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+    .reuse { border-top: 1px solid var(--line); margin-top: 7px; padding-top: 7px; }
+    .add-controls { margin-bottom: 8px; background: #edf6fe; }
+    .add-controls .field-grid { margin-top: 6px; }
+    .helper-button { align-self: end; min-height: 48px; padding: 6px 9px; font-size: 13px; }
+    .empty { padding: 19px; display: grid; gap: 9px; justify-items: start; }
+    .empty h3 { font-size: 17px; margin: 0; }
+    .table { overflow: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid #d8e1ea; text-align: left; white-space: nowrap; }
+    th { background: #eef3f8; color: #2f485f; }
+    .mapping th:nth-child(3), .mapping td:nth-child(3) { background: #eef6fd; }
+    code { font-size: 13px; }
+    dialog {
+      width: min(640px, calc(100% - 34px)); max-height: calc(100dvh - 34px); overflow: auto;
+      padding: 16px; border: 2px solid #46637c; border-radius: 8px; background: #fff;
+      color: #14253a; box-shadow: 0 10px 40px #0c1d3855;
+    }
+    dialog::backdrop { background: #17273880; }
+    .size-settings { display: grid; gap: 13px; margin-top: 12px; }
+    .bezel-option { display: flex; align-items: center; min-height: 48px; gap: 10px; }
+    .bezel-option input { accent-color: var(--blue); width: 25px; height: 25px; min-height: 0; margin: 0; }
+    .calibration { display: grid; gap: 9px; }
+    .calibration-rule {
+      width: min(300px, 100%); height: 20px; position: relative; margin-block: 3px;
+      border-inline: 2px solid #14253a;
+    }
+    .calibration-rule::after {
+      content: ""; position: absolute; inset: 9px 0 auto; height: 2px; background: #14253a;
+    }
+    .calibration-actions {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px;
+      align-items: end;
+    }
+    .size-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .import-grid { display: grid; gap: 9px; margin: 12px 0; }
+    .import-status { color: var(--muted); overflow-wrap: anywhere; }
+    .import-status.error { color: #8f2029; }
+    .dashboard {
+      display: grid; grid-template-columns: minmax(0, 1fr) 236px;
+      grid-template-areas: "process metrics"; gap: 10px; min-height: 0;
+    }
+    .control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .control-grid .panel { padding: 8px; text-align: center; }
+    .control-grid h3 { margin-bottom: 7px; }
+    .commands { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .commands button { min-width: 0; min-height: 60px; padding-inline: 6px; overflow-wrap: anywhere; }
+    .sim-input { background: #f3f6fa; }
+    .process, .cell-metrics { text-align: center; }
+    .process { grid-area: process; }
+    .map-heading {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center; gap: 6px; margin-bottom: 8px;
+    }
+    .map-heading h3 { grid-column: 2; }
+    .map-heading span { justify-self: end; text-align: center; }
+    .map-heading h3, .cell-metrics h3 { margin: 0; }
+    #in-flight { font-weight: 750; color: #15466d; }
+    .floorplan {
+      display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+      grid-template-rows: minmax(70px, 1fr) 48px minmax(70px, 1fr); gap: 6px; min-height: 0;
+      grid-template-areas: "rail rail rail heater" "infeed robot fixture heater" "cool cool cool discharge";
+      padding: 6px; border: 1px solid #aebdcb; background: #e9eef2; border-radius: 4px;
+    }
+    .rail { grid-area: rail; }
+    [data-station="infeed"] { grid-area: infeed; }
+    .robot { grid-area: robot; }
+    [data-station="fixture"] { grid-area: fixture; }
+    .heater { grid-area: heater; }
+    .cooling { grid-area: cool; }
+    .discharge { grid-area: discharge; }
+    .zone { display: grid; grid-template-rows: 24px minmax(0, 1fr); gap: 5px; min-width: 0; }
+    .zone h4, .station.deflector {
+      display: grid; align-content: center; min-height: 0; margin: 0; padding: 4px;
+      border: 1px solid #a1b1be; border-radius: 4px; background: #d5dfe8;
+      color: #213c54; font-size: 13px; font-weight: 800;
+    }
+    .three, .two { display: grid; gap: 6px; }
+    .three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .station {
+      display: grid; align-content: center; justify-items: center; gap: 2px;
+      min-width: 0; min-height: 0; padding: 3px;
+      border: 1px solid #a1b1be; border-radius: 4px; background: #f5f8fb; color: #203b51;
+    }
+    .station strong { display: block; font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
+    .deflector strong { font-size: inherit; }
+    .robot, .heater { background: #e5ecf4; }
+    .station[data-mode="active"] { border-color: #1c8246; background: #c8f2d5; color: #0e4829; box-shadow: inset 0 0 0 1px #80c99a; }
+    .station[data-mode="held"] { border-color: #ad8b3a; background: #f6eccc; color: #554111; }
+    .station[data-mode="fault"] { border-color: #760f18; background: #b3212e; color: #fff; box-shadow: inset 0 0 0 1px #d26068; }
+    .occupants { display: flex; align-items: center; justify-content: center; gap: 3px; flex-wrap: wrap; min-height: 15px; line-height: 1.15; }
+    .deflector .occupants { display: none; }
+    .part-token {
+      border-radius: 3px; padding: 0 4px; line-height: 12px; background: #ffffffd9; border: 1px solid #7c928e;
+      color: #123a30; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .part-token.waiting { background: #f9f3de; border-color: #bdab77; color: #634d1f; }
+    .block-signal { font-size: 12px; font-weight: 700; }
+    .map-key { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px 12px; margin-top: 8px; color: var(--muted); line-height: 1.2; }
+    .map-key span { display: inline-flex; gap: 4px; align-items: center; }
+    .map-key i { width: 10px; height: 10px; border: 1px solid #627786; border-radius: 2px; }
+    .key-active { background: #6fc78b; }
+    .key-fault { background: #b3212e; }
+    .key-held { background: #e5c772; }
+    .cell-metrics { grid-area: metrics; display: grid; grid-template-columns: 1fr .85fr 1.15fr; gap: 8px; align-items: center; }
+    .cell-metrics > * { min-width: 0; }
+    .cell-metrics .lamps { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px; }
+    .cell-metrics .lamp { justify-content: center; min-height: 32px; padding: 3px; font-size: 12px; line-height: 1.15; }
+    .controls-status[data-mode="fault"] { outline: 2px solid #ab252d; outline-offset: 1px; background: #fde5e6; }
+    .rate { border-inline: 1px solid var(--line); padding: 2px 7px; }
+    .rate .spread, .totals .spread { display: grid; justify-content: center; gap: 3px; }
+    .gauge-art { width: min(128px,100%); aspect-ratio: 2; margin: 0 auto; position: relative; overflow: hidden; }
+    .gauge-arc {
+      position: absolute; inset: 0 8% auto; aspect-ratio: 1;
+      border-radius: 50%; background: conic-gradient(from 270deg,#e6b442 0deg 120deg,#278652 120deg 180deg,transparent 180deg);
+      mask: radial-gradient(farthest-side,transparent 76%,#000 77%);
+    }
+    .gauge-hand {
+      position: absolute; left: calc(50% - 2px); top: 15%; height: 69%; width: 4px; border-radius: 2px;
+      transform: rotate(var(--angle,0deg)); transform-origin: 50% 100%; background: #183650;
+    }
+    .gauge-hand::after { content: ""; position: absolute; bottom: -3px; left: -2px; width: 8px; height: 8px; border-radius: 50%; background: #183650; }
+    .gauge-tick { position: absolute; color: #2d4c66; font-size: 12px; line-height: 1; font-weight: 800; }
+    .tick-60 { left: 8%; bottom: 0; }
+    .tick-70 { left: 79%; top: 4%; }
+    .tick-75 { right: 8%; bottom: 0; }
+    .rate-number { text-align: center; line-height: 1.1; }
+    .rate-number strong { font-size: 24px; }
+    .rate-number span { color: #3f5870; font-size: 13px; font-weight: 750; }
+    .totals .counts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 7px; }
+    .totals .count { padding: 3px 5px; }
+    .totals .count dt { font-size: 12px; }
+    .totals .count dd { font-size: 22px; }
+    .fault-select { margin: 12px 0; }
+    #fault-banner {
+      padding: 0; width: min(740px,calc(100% - 24px)); border: 4px solid #8b1721;
+      border-radius: 6px; color: #641419; background: #fff; box-shadow: 0 8px 44px #14070c9c;
+    }
+    #fault-banner::backdrop { background: #1d222db3; }
+    .fault-head {
+      display: flex; gap: 12px; justify-content: center; align-items: center; padding: 14px 9px;
+      background: #b51e2b; color: #fff; text-align: center;
+    }
+    .fault-head h2 { font-size: clamp(25px,4vw,43px); }
+    .fault-head span { border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; line-height: 30px; flex: 0 0 auto; font-size: 26px; font-weight: 900; }
+    .fault-body { padding: clamp(12px,3vw,24px); text-align: center; }
+    #fault-origin { font-size: clamp(17px,3vw,23px); font-weight: 800; }
+    #fault-help { margin: 6px 0 12px; }
+    #dismiss-fault { min-width: 190px; min-height: 60px; }
+    #plc { text-align: center; }
+    #plc .page-title p { margin: 7px auto 0; }
+    .plc-card .plc-spec { margin-bottom: 9px; }
+    .plc-card table { table-layout: fixed; }
+    .plc-card th, .plc-card td {
+      padding: 6px 4px; text-align: center; vertical-align: middle;
+      white-space: normal; overflow-wrap: anywhere;
+    }
+    .plc-card tbody tr:nth-child(even) { background: #f6f8fa; }
+    .plc-io th:first-child { width: 19%; }
+    .plc-io th:nth-child(2) { width: 23%; }
+    .plc-io th:last-child { width: 18%; }
+    .plc-io small { display: block; color: var(--muted); font-size: 12px; }
+    .plc-spares { margin-top: 8px; }
+    .plc-state { display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-weight: 750; }
+    .plc-state[data-state="on"] { color: #085732; }
+    .plc-state[data-state="on"] .dot { background: #29a960; border-color: #06773d; }
+    .plc-state[data-state="off"] { color: var(--muted); }
+    .plc-state[data-state="route"] { color: var(--blue); }
+    .plc-state[data-state="none"] .dot, .plc-state[data-state="route"] .dot { display: none; }
+    .plc-network th:first-child { width: 28%; }
+    .plc-recipe th:first-child { width: 59%; }
+    .plc-recipe th:last-child { width: 14%; }
+    .console {
+      position: absolute; inset: 0 auto auto 0; width: 1024px; height: 576px;
+      container: hmi / size; background: #fff; display: grid;
+      grid-template-rows: 70px minmax(0, 1fr) 33px 64px;
+      transform: scale(var(--console-scale, 1)); transform-origin: top left;
+    }
+    .top-recipe { display: grid; align-content: center; min-height: 54px; padding: 4px 8px;
+      background: var(--light); border: 1px solid var(--line); border-radius: 6px; }
+    .top-recipe strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .view { padding: 8px 14px; overflow: hidden; }
+    .view > section { height: 100%; min-width: 0; }
+    .page-title { margin-bottom: 7px; }
+    .view button { min-height: 44px; }
+    .nav { grid-template-columns: repeat(4,minmax(0,1fr)); padding-block: 4px; }
+    .nav button { min-height: 0; }
+    .message { min-height: 0; padding: 6px 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #cell { display: grid; grid-template-rows: 87px minmax(0, 1fr); gap: 8px; }
+    .control-grid { margin: 0; }
+    .control-grid .panel { padding: 5px 7px; }
+    .control-grid h3 { margin-bottom: 3px; }
+    .commands button { min-height: 51px; }
+    .process, .cell-metrics { padding: 7px 9px; min-height: 0; }
+    .process { display: grid; grid-template-rows: 24px minmax(0, 1fr) auto; gap: 5px; }
+    .map-heading, .map-key { margin: 0; }
+    .cell-metrics { grid-template-columns: minmax(0,1fr); align-content: space-between; gap: 5px; }
+    .cell-metrics .lamps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+    .cell-metrics .lamp { min-height: 24px; }
+    .rate { border: 0; border-block: 1px solid var(--line); padding: 4px 0; }
+    .rate .spread, .totals .spread { display: flex; justify-content: space-between; gap: 5px; }
+    .gauge-art { width: 116px; }
+    .totals .counts { margin-top: 4px; }
+    .totals .count dd { font-size: 20px; }
+    .subnav { display: flex; gap: 6px; margin-bottom: 7px; }
+    .subnav button { flex: 1; padding-inline: 5px; min-width: 0; }
+    #recipes .page-title { flex-wrap: nowrap; }
+    #recipes .picker { margin-bottom: 5px; padding: 5px 8px; }
+    #recipes input, #recipes select { min-height: 34px; padding-block: 4px; }
+    #recipes .editor-actions { margin-bottom: 5px; flex-wrap: nowrap; }
+    #recipes .editor-actions > .row:first-child { min-width: 0; gap: 2px 8px; }
+    #editor-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 440px; }
+    .recipe-pane { padding: 6px 9px; }
+    .recipe-pane h3 { margin-bottom: 4px; }
+    .recipe-pane .field-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px 8px; }
+    .recipe-pane .field-grid .wide { grid-column: span 2; }
+    .recipe-pane .details-grid { gap: 5px 8px; }
+    .recipe-pane .add-controls { padding: 4px 7px; margin: 0 0 5px; }
+    .recipe-pane .add-controls .field-grid { margin: 0; }
+    .recipe-pane .add-controls h3 { display: none; }
+    .recipe-pane .reuse { margin: 4px 0; padding: 4px 0 0; }
+    #mapping :is(th,td) { padding: 2px 7px; font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
+    #plc .page-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    #plc .page-title p { margin: 0; }
+    .plc-card { padding: 6px 10px; }
+    .plc-card h3, .plc-card .plc-spec { display: inline-block; margin: 0 3px 5px; }
+    .plc-card :is(th,td) { padding: 3px 5px; font-size: 13px; line-height: 1.15; }
+    .plc-io small { display: inline; margin-left: 8px; }
+    .plc-spares { margin-top: 5px; }
+    #history { display: grid; grid-template-rows: 46px minmax(0,1fr) 44px; gap: 8px; }
+    .history-heading { display: grid; grid-template-columns: 1fr 1.55fr 1fr; align-items: center; gap: 8px; }
+    .history-heading > button { justify-self: end; }
+    .history-filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+    .history-window { min-height: 0; border: 1px solid var(--line); border-radius: 5px; background: #f7f9fb; }
+    #history-empty { padding: 12px; text-align: center; }
+    .history-items { display: grid; height: 100%; grid-template-rows: repeat(6,minmax(0,1fr)); padding: 0; list-style: none; }
+    .history-items li { display: grid; grid-template-columns: 10ch minmax(0,1fr); align-items: center;
+      min-height: 0; gap: 8px; padding: 4px 10px; border-bottom: 1px solid #dbe4ec; font-size: 13px; }
+    .history-items li:nth-child(even) { background: #eef3f7; }
+    .history-items time { text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .history-items [data-kind="fault"] { background: #fff1f2; color: #81242b; }
+    .history-items li span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+    .history-pages { display: grid; grid-template-columns: 120px minmax(0,1fr) 120px; gap: 8px; align-items: center; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="stage">
+<main class="frame" id="hmi-frame">
+  <div class="bezel-label"><strong>CM5-T10W</strong><span>VIRTUAL HMI</span></div>
+  <div class="display" id="hmi-display">
+   <div class="console">
+    <header class="topbar">
+      <div class="identity">
+        <div><small>Dodge Industrial</small><h1>Cell 730</h1></div>
+        <div class="line"><strong>SS6 Controls</strong><small>Simulation</small></div>
+      </div>
+      <div class="top-recipe">
+        <span class="micro muted">Active recipe</span>
+        <strong id="active-recipe" class="numbers">None loaded</strong>
+      </div>
+      <label class="playback-control">
+        <span>Playback speed</span>
+        <input id="playback-speed" type="range" min="1" max="32" step="1" value="8" aria-valuetext="8 times real time">
+        <span id="speed-value" class="numbers" aria-hidden="true">8×</span>
+      </label>
+      <div class="row screen-actions">
+        <span id="mode" class="mode" data-state="stopped">STOPPED</span>
+        <button id="display-size" class="display-size" type="button">Display Size</button>
+      </div>
+    </header>
+    <div class="view" id="view">
+      <section id="cell" aria-label="Cell Status">
+        <div class="control-grid">
+          <div class="panel">
+            <h3>Cell controls</h3>
+            <div class="commands">
+              <button id="start" class="start" type="button" disabled>Start</button>
+              <button id="stop" class="motion-stop" type="button" disabled>Stop</button>
+              <button id="reset" type="button" disabled>Reset Fault</button>
+            </div>
+          </div>
+          <div class="panel sim-input">
+            <h3>Simulation inputs</h3>
+            <div class="commands">
+              <button id="estop" class="estop" type="button">E-STOP</button>
+              <button id="release" class="release" type="button" hidden>Release E-stop</button>
+              <button id="fault" type="button">Trigger Fault</button>
+              <button id="route-qc" type="button" aria-pressed="false">Route Next to QC</button>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard">
+          <div class="panel process">
+            <div class="spread map-heading">
+              <h3>Cell overview</h3>
+              <span id="in-flight" class="small numbers">0 in process</span>
+            </div>
+            <div class="floorplan" aria-label="Top-down schematic of Cell 730">
+              <section class="zone rail">
+                <h4>SS2 Flange rail</h4>
+                <div class="three">
+                  <div class="station" data-station="stamp"><strong>Etcher</strong><div class="occupants"></div></div>
+                  <div class="station" data-station="hopper"><strong>Hopper</strong><div class="occupants"></div></div>
+                  <div class="station" data-station="cart"><strong>Cart Pickup</strong><div class="occupants"></div></div>
+                </div>
+              </section>
+              <div class="station" data-station="infeed"><strong>Sprocket Infeed</strong><div class="occupants"></div></div>
+              <div class="station robot" data-station="robot"><strong>FANUC Robot</strong><div class="occupants"></div></div>
+              <div class="station" data-station="fixture"><strong>Assembly Fixture</strong><div class="occupants"></div></div>
+              <div class="station heater" data-station="heater"><strong>Induction Heater</strong><div class="occupants"></div></div>
+              <section class="zone cooling">
+                <h4>SS4 Cooling conveyor</h4>
+                <div class="three">
+                  <div class="station" data-station="cool1"><strong>Stage 1</strong><div class="occupants"></div></div>
+                  <div class="station" data-station="cool2"><strong>Stage 2</strong><div class="occupants"></div></div>
+                  <div class="station" data-station="cool3"><strong>Stage 3</strong><div class="occupants"></div></div>
+                </div>
+              </section>
+              <section class="zone discharge">
+                <div class="station deflector" data-station="deflector"><strong>SS5 Deflector</strong><div class="occupants"></div></div>
+                <div class="two">
+                  <div class="station outlet" data-station="exit"><strong>Exit</strong><div class="occupants"></div></div>
+                  <div class="station outlet" data-station="qc"><strong>QC</strong><div class="occupants"></div></div>
+                </div>
+              </section>
+            </div>
+            <p class="micro map-key"><span><i class="key-active"></i>Active</span><span><i class="key-fault"></i>Fault</span><span><i class="key-held"></i>Held</span><span>S sprocket · F1/F2 flanges · A assembly</span></p>
+          </div>
+          <div class="panel cell-metrics">
+            <div id="controls-status" data-station="controls" class="controls-status">
+              <div class="lamps" aria-label="Operating state">
+                <span class="lamp" data-state="running" id="lamp-running"><i class="dot" aria-hidden="true"></i>Running</span>
+                <span class="lamp on" data-state="stopped" id="lamp-stopped"><i class="dot" aria-hidden="true"></i>Stopped</span>
+                <span class="lamp" data-state="faulted" id="lamp-faulted"><i class="dot" aria-hidden="true"></i>Faulted</span>
+                <span class="lamp" data-state="estop" id="lamp-estop"><i class="dot" aria-hidden="true"></i>E-stop</span>
+              </div>
+            </div>
+            <div class="rate" id="rate" aria-label="Recipe target rate">
+              <div class="spread"><h3>Recipe Rate</h3><span class="micro muted">Target</span></div>
+              <div class="gauge-art" aria-hidden="true">
+                <div class="gauge-arc"></div>
+                <div class="gauge-hand" id="rate-hand" hidden></div>
+                <span class="gauge-tick tick-60">60</span><span class="gauge-tick tick-70">70</span><span class="gauge-tick tick-75">75</span>
+              </div>
+              <p class="rate-number numbers"><strong id="rate-value">—</strong> <span>PPH</span></p>
+            </div>
+            <div class="totals">
+              <div class="spread"><h3>Discharged</h3><span id="route-status" class="micro muted">Next: Exit</span></div>
+              <dl class="counts numbers">
+                <div class="count"><dt>Total</dt><dd id="total-count">0</dd></div>
+                <div class="count"><dt>Exit</dt><dd id="exit-count">0</dd></div>
+                <div class="count qc"><dt>QC</dt><dd id="qc-count">0</dd></div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="recipes" hidden>
+        <div class="page-title spread">
+          <h2>Recipe Management</h2>
+          <div class="row">
+            <button type="button" data-import>Import Excel</button>
+            <button id="export" type="button" disabled>Export Excel</button>
+            <button id="add" type="button" class="primary">Add Recipe</button>
+          </div>
+        </div>
+        <div class="picker panel">
+          <label>View recipes<select id="family-picker"><option value="">Select part family</option></select></label>
+          <label>Part number in family<select id="part-picker" disabled><option value="">Select part family first</option></select></label>
+          <p id="catalog-count" class="small muted">Catalog is empty</p>
+        </div>
+        <div id="empty-editor" class="panel empty">
+          <h3 id="empty-title">No recipes loaded</h3>
+          <p class="small muted" id="empty-text">Import the Cell 730 workbook or enter a recipe from the HMI.</p>
+        </div>
+        <form id="editor" hidden novalidate>
+          <div class="editor-actions spread">
+            <div class="row"><h3 id="editor-title">Recipe</h3><span id="draft-status" class="small muted">Saved recipe</span></div>
+            <div class="row">
+              <button id="cancel-add" type="button" hidden>Cancel Add</button>
+              <button id="revert" type="button">Revert</button>
+              <button id="save" type="submit">Save Recipe</button>
+              <button id="send" type="button" class="primary">Send to PLC</button>
+            </div>
+          </div>
+          <div class="subnav" role="group" aria-label="Sections"><button type="button" data-recipe-page="identity" aria-pressed="true">Recipe</button><button type="button" data-recipe-page="components" aria-pressed="false">Components</button><button type="button" data-recipe-page="process" aria-pressed="false">Process Times</button><button type="button" data-recipe-page="drawing" aria-pressed="false">Flange Drawing</button><button type="button" data-recipe-page="tags" aria-pressed="false">Tag Preview</button></div>
+          <div class="panel recipe-pane" data-recipe-pane="identity">
+              <div id="add-controls" class="panel add-controls" hidden>
+                <div class="field-grid">
+                  <label>Family type<select id="family-mode"><option value="new">New part family</option><option value="existing">Existing part family</option></select></label>
+                  <label id="existing-family-label" hidden>Existing part family<select id="existing-family"></select></label>
+                </div>
+              </div>
+              <h3>Recipe identity</h3>
+              <div class="field-grid">
+                <label>Part family ID<input id="FamilyID" maxlength="40" spellcheck="false"></label>
+                <label>Assembly P/N<input id="AssemblyPN" maxlength="40" spellcheck="false"></label>
+                <label class="wide">Description<input id="Description" maxlength="240"></label>
+              </div>
+            </div>
+            <div class="panel recipe-pane" data-recipe-pane="components" hidden>
+              <h3>Sprocket and flange</h3>
+              <div class="field-grid">
+                <label>Sprocket P/N<input id="SprocketPN" maxlength="40" spellcheck="false"></label>
+                <label>Flange P/N<input id="FlangePN" maxlength="40" spellcheck="false"></label>
+                <label>Sprocket OD (in)<input id="SprocketOD_in" type="number" step="any"></label>
+                <label>Flange OD (in)<input id="FlangeOD_in" type="number" step="any"></label>
+                <label>Flange ID (in)<input id="FlangeID_in" type="number" step="any"></label>
+                <label>Sprocket teeth<input id="SprocketTeeth" type="number" step="1" min="1"></label>
+              </div>
+              <div class="field-grid reuse" id="reuse" hidden>
+                <label>Reuse sprocket<select id="reuse-sprocket"></select></label>
+                <label>Reuse flange<select id="reuse-flange"></select></label>
+              </div>
+            </div>
+            <div class="panel recipe-pane" data-recipe-pane="process" hidden>
+              <h3>Process times</h3>
+              <div class="field-grid">
+                <label>Heat / flange (s)<input id="Heat_s" type="number" step="any"></label>
+                <label>Stamp (s)<input id="Etch_s" type="number" step="any"></label>
+                <label>Cooling (s)<input id="Cooling_s" type="number" step="any"></label>
+                <button id="estimate" type="button" class="helper-button">Estimate Stamp</button>
+              </div>
+              <p id="stamp-source" class="small muted note"></p>
+            </div>
+          <div id="drawing-details" class="panel recipe-pane" data-recipe-pane="drawing" hidden>
+            <h3>Flange drawing details</h3>
+            <div class="details-grid">
+              <label>Drawing<input id="FlangeDrawing" maxlength="160"></label>
+              <label>Gauge / thickness<input id="FlangeGauge" maxlength="160"></label>
+              <label>Bend diameter (in)<input id="FlangeBendDia_in" type="number" step="any"></label>
+              <label>Angle (°)<input id="FlangeAngle_deg" type="number" step="any"></label>
+              <label>Flatness (in)<input id="FlangeFlatness_in" type="number" step="any"></label>
+              <label>OD tolerance<input id="FlangeODTolerance" maxlength="160"></label>
+              <label>ID tolerance<input id="FlangeIDTolerance" maxlength="160"></label>
+              <label>Bend dia. tolerance<input id="FlangeBendTolerance" maxlength="160"></label>
+            </div>
+          </div>
+          <div id="tag-details" class="panel recipe-pane" data-recipe-pane="tags" hidden>
+            <h3>Simulated PLC tags</h3>
+            <div id="mapping" class="mapping"></div>
+          </div>
+        </form>
+      </section>
+      <section id="plc" hidden>
+        <div class="page-title">
+          <h2>PLC Tags</h2>
+          <p class="small muted">Wiring Rev G · Lights show simulated station activity. A dash marks a value the simulator does not track.</p>
+        </div>
+        <div class="subnav" role="group" aria-label="Sections"><button type="button" data-plc-page="inputs" aria-pressed="true">Digital Inputs</button><button type="button" data-plc-page="outputs" aria-pressed="false">Digital Outputs</button><button type="button" data-plc-page="analog" aria-pressed="false">Analog Outputs</button><button type="button" data-plc-page="recipe" aria-pressed="false">Recipe Tags</button><button type="button" data-plc-page="links" aria-pressed="false">Network</button></div>
+        <div>
+          <section class="panel plc-card plc-io" aria-labelledby="di-heading" data-plc-pane="inputs">
+            <h3 id="di-heading">Digital inputs</h3>
+            <p class="micro muted plc-spec">DI1 · Slot 1 · P2-16ND3-1</p>
+            <div id="plc-inputs"></div>
+            <p class="micro muted plc-spares">Spare IN 6–8 and 15–16</p>
+          </section>
+          <section class="panel plc-card plc-io" aria-labelledby="do-heading" data-plc-pane="outputs" hidden>
+            <h3 id="do-heading">Digital outputs</h3>
+            <p class="micro muted plc-spec">DO1 · Slot 2 · P2-16TD2P</p>
+            <div id="plc-outputs"></div>
+            <p class="micro muted plc-spares">Spare OUT 6 and 9–16</p>
+          </section>
+          <section class="panel plc-card plc-io" aria-labelledby="ao-heading" data-plc-pane="analog" hidden>
+            <h3 id="ao-heading">Analog outputs</h3>
+            <p class="micro muted plc-spec">AO1 · Slot 3 · P2-08DA-1</p>
+            <div id="plc-analog"></div>
+            <p class="micro muted plc-spares">Spare I4+ to I8+</p>
+          </section>
+          <section class="panel plc-card plc-recipe" aria-labelledby="plc-recipe-heading" data-plc-pane="recipe" hidden>
+            <h3 id="plc-recipe-heading">Active recipe tags</h3>
+            <div id="plc-recipe"></div>
+          </section>
+          <section class="panel plc-card plc-network" aria-labelledby="plc-links-heading" data-plc-pane="links" hidden>
+            <h3 id="plc-links-heading">Network and device signals</h3>
+            <p class="micro muted plc-spec">Rev G connection reference</p>
+            <div id="plc-links"></div>
+          </section>
+        </div>
+      </section>
+      <section id="history" hidden aria-labelledby="history-title">
+        <div class="history-heading">
+          <h2 id="history-title">Run History</h2>
+          <div class="history-filters" role="group" aria-label="Filter run history">
+            <button type="button" data-history="all" aria-pressed="true">All</button>
+            <button type="button" data-history="status" aria-pressed="false">Status</button>
+            <button type="button" data-history="fault" aria-pressed="false">Faults</button>
+          </div>
+          <button type="button" id="export-history" class="primary" disabled>Export All CSV</button>
+        </div>
+        <div class="history-window">
+          <p id="history-empty" class="small muted">No events this session.</p>
+          <ol id="history-items" class="history-items" role="list"></ol>
+        </div>
+        <div class="history-pages">
+          <button type="button" id="history-prev" disabled>Previous</button>
+          <span id="history-page-label" class="small muted" aria-live="polite"></span>
+          <button type="button" id="history-next" disabled>Next</button>
+        </div>
+      </section>
+    </div>
+    <div id="message" class="message" role="status">Load a recipe in Recipe Management to start the simulation.</div>
+    <nav class="nav" aria-label="HMI screens">
+      <button data-page="cell" type="button" aria-current="page">Cell Status</button>
+      <button data-page="recipes" type="button">Recipe Management</button>
+      <button data-page="plc" type="button">PLC Tags</button>
+      <button data-page="history" type="button">History</button>
+    </nav>
+   </div>
+  </div>
+</main>
+</div>
+<dialog id="display-settings" aria-labelledby="display-settings-title">
+  <div class="spread"><h2 id="display-settings-title">Display Size</h2><button id="close-display-settings" type="button">Close</button></div>
+  <div class="size-settings">
+    <p class="small muted">CM5-T10W screen · 222.72 × 125.28 mm · 16:9<br>Outer bezel · 268.2 × 195.9 mm</p>
+    <label class="bezel-option"><input id="show-bezel" type="checkbox">Show full bezel</label>
+    <form class="calibration" id="calibration-form">
+      <h3>Actual Size</h3>
+      <p class="small">Measure the bar from outside edge to outside edge with a ruler. Enter its length in millimeters at the browser zoom you’ll use.</p>
+      <div id="calibration-rule" class="calibration-rule" aria-hidden="true"></div>
+      <div class="calibration-actions">
+        <label>Measured length (mm)<input id="calibration-mm" type="number" inputmode="decimal" min="1" step="any" required></label>
+        <button class="primary" type="submit">Apply Actual Size</button>
+      </div>
+    </form>
+    <p id="display-size-status" class="small muted" role="status"></p>
+    <div class="size-actions">
+      <button type="button" id="fit-display">Fit to Window</button>
+      <button type="button" id="fullscreen" hidden>Full Screen</button>
+    </div>
+  </div>
+</dialog>
+<dialog id="import-dialog" aria-labelledby="import-title">
+  <div class="spread"><h2 id="import-title">Import Excel recipes</h2><button id="close-import" type="button">Close</button></div>
+  <div class="import-grid">
+    <p class="small muted">Use an .xlsx file with a <strong>Recipes</strong> worksheet and headers in row 1.</p>
+    <label>Recipe workbook<input type="file" id="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+    <p id="import-status" class="import-status small" role="status"></p>
+    <div class="panel" id="preview" hidden><h3 id="preview-title"></h3><div class="table" id="preview-table"></div></div>
+  </div>
+  <div class="spread">
+    <button id="template" type="button">Download Dodge Workbook</button>
+    <button id="load" class="primary" type="button" disabled>Load Catalog</button>
+  </div>
+</dialog>
+<dialog id="fault-picker" aria-labelledby="fault-picker-title">
+  <div class="spread"><h2 id="fault-picker-title">Simulate a station fault</h2><button id="cancel-fault" type="button">Cancel</button></div>
+  <label class="fault-select">Fault location<select id="fault-station"></select></label>
+  <button id="inject-fault" class="estop" type="button">Trigger Station Fault</button>
+</dialog>
+<dialog id="fault-banner" role="alertdialog" aria-modal="true" aria-labelledby="fault-heading" aria-describedby="fault-origin fault-help">
+  <div class="fault-head"><span aria-hidden="true">!</span><h2 id="fault-heading">CELL FAULT</h2></div>
+  <div class="fault-body">
+    <p id="fault-origin"></p>
+    <p id="fault-help"></p>
+    <button id="dismiss-fault" class="estop" type="button" autofocus>Dismiss Fault</button>
+  </div>
+</dialog>
+<script>
+"use strict";
+
+const el = id => document.getElementById(id);
+
+const recipeFields = [
+  {key:"SprocketOD_in", name:"Sprocket OD", tag:"rSprocketOD_in", unit:"in", min:1, max:8},
+  {key:"FlangeOD_in", name:"Flange OD", tag:"rFlangeOD_in", unit:"in", min:1, max:8},
+  {key:"FlangeID_in", name:"Flange ID", tag:"rFlangeID_in", unit:"in", min:0.5, max:8},
+  {key:"Heat_s", name:"Heat per flange", tag:"diHeatPerFlange_ms", unit:"s", min:1, max:30},
+  {key:"Etch_s", name:"Stamp time", tag:"diEtch_ms", unit:"s", min:5, max:30},
+  {key:"Cooling_s", name:"Cooling time", tag:"diCooling_ms", unit:"s", min:1, max:180}
+];
+const requiredHeaders = ["AssemblyPN","FamilyID","Description","FlangePN", ...recipeFields.map(field=>field.key)];
+const optionalHeaders = [
+  "SprocketPN","SprocketTeeth","FlangeDrawing","FlangeGauge","FlangeBendDia_in",
+  "FlangeAngle_deg","FlangeFlatness_in","FlangeODTolerance","FlangeIDTolerance","FlangeBendTolerance"
+];
+const headers = [...requiredHeaders, ...optionalHeaders];
+const identifierKeys = [
+  ["FamilyID","Part family ID"],["AssemblyPN","Assembly P/N"],["SprocketPN","Sprocket P/N"],["FlangePN","Flange P/N"]
+];
+const sprocketKeys = ["SprocketPN","SprocketOD_in","SprocketTeeth"];
+const flangeKeys = ["FlangePN","FlangeOD_in","FlangeID_in","Heat_s","Etch_s", ...optionalHeaders.slice(2), "stampFromOD"];
+const numericFields = new Set([
+  ...recipeFields.map(field=>field.key),"SprocketTeeth","FlangeBendDia_in","FlangeAngle_deg","FlangeFlatness_in"
+]);
+const minFlangeOD = 2.606;
+const maxFlangeOD = 5.402;
+const qcInterval = 20;
+const xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+function estimatedStamp(od) {
+  if (!Number.isFinite(od)) return null;
+  return Math.max(5, Math.round((5 + (od - minFlangeOD) * 6 / (maxFlangeOD - minFlangeOD)) * 100) / 100);
+}
+function stampFormula(odCell) {
+  return `MAX(5,ROUND(5+(${odCell}-${minFlangeOD})*6/(${maxFlangeOD}-${minFlangeOD}),2))`;
+}
+function normalizeRecipe(input, useMaterialNumber = false) {
+  const recipe = {};
+  for (const key of headers) {
+    const value = String(input[key] ?? "").trim();
+    recipe[key] = numericFields.has(key) ? (value === "" ? null : Number(value)) : value;
+  }
+  if (!recipe.SprocketPN && useMaterialNumber) recipe.SprocketPN = recipe.AssemblyPN;
+  recipe.stampFromOD = input.stampFromOD === true;
+  return recipe;
+}
+function validateRecipe(recipe) {
+  for (const [key,name] of identifierKeys) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/.test(recipe[key])) {
+      throw new Error(name + " requires 1–40 letters, numbers, periods, underscores or hyphens.");
+    }
+  }
+  for (const {key,name,unit,min,max} of recipeFields) {
+    if (!Number.isFinite(recipe[key]) || recipe[key] < min || recipe[key] > max) {
+      throw new Error(name + " must be " + min + "–" + max + " " + unit + ".");
+    }
+  }
+  if (recipe.FlangeID_in >= recipe.FlangeOD_in) throw new Error("Flange ID must be smaller than flange OD.");
+  if (recipe.SprocketTeeth != null && (!Number.isSafeInteger(recipe.SprocketTeeth) || recipe.SprocketTeeth < 1)) {
+    throw new Error("Sprocket teeth must be a positive whole number.");
+  }
+  for (const [key,name] of [["FlangeBendDia_in","Bend diameter"],["FlangeAngle_deg","Flange angle"],["FlangeFlatness_in","Flatness"]]) {
+    if (recipe[key] != null && (!Number.isFinite(recipe[key]) || recipe[key] < 0)) {
+      throw new Error(name + " must be a non-negative number.");
+    }
+  }
+  if (recipe.stampFromOD && recipe.Etch_s !== estimatedStamp(recipe.FlangeOD_in)) {
+    throw new Error("Recalculate the stamp estimate from flange OD.");
+  }
+}
+function mapTags(recipe) {
+  const tags = {sAssemblyPN:recipe.AssemblyPN, sFlangePN:recipe.FlangePN};
+  for (const {key,tag,unit} of recipeFields) {
+    const value = recipe[key];
+    tags[tag] = Number.isFinite(value) ? (unit === "s" ? Math.round(value*1000) : value) : null;
+  }
+  return tags;
+}
+function validateCatalog(rows) {
+  const recipes = new Map();
+  for (const row of rows) {
+    const recipe = normalizeRecipe(row);
+    validateRecipe(recipe);
+    if (recipes.has(recipe.AssemblyPN)) throw new Error("Duplicate assembly P/N " + recipe.AssemblyPN + ".");
+    recipes.set(recipe.AssemblyPN,recipe);
+  }
+  return recipes;
+}
+
+const equipment = new Map([
+  ["stamp","SS2 Etcher"],
+  ["hopper","SS2 Flange hopper"],
+  ["cart","SS2 Cart pickup"],
+  ["infeed","SS1 Sprocket infeed"],
+  ["robot","SS1 FANUC robot"],
+  ["fixture","SS3 Assembly fixture"],
+  ["heater","SS3 Induction heater"],
+  ["cool1","SS4 Cooling stage 1"],
+  ["cool2","SS4 Cooling stage 2"],
+  ["cool3","SS4 Cooling stage 3"],
+  ["deflector","SS5 Deflector"],
+  ["exit","SS5 Exit station"],
+  ["qc","SS5 QC station"],
+  ["controls","SS6 Controls"]
+]);
+const playbackFrameMs = 60;
+const simulationStepMs = 480;
+const handoffMs = 2_880;
+const rateMin = 60;
+const rateMax = 75;
+// Bounds are the fastest and slowest timed workloads in the supplied workbook.
+const nominalWorkMinMs = 28_020;
+const nominalWorkMaxMs = 48_000;
+
+function recipePace(tags) {
+  const stamp = tags.diEtch_ms;
+  const heat = tags.diHeatPerFlange_ms;
+  const cool = tags.diCooling_ms;
+  const work = stamp + 2*heat + cool;
+  const fraction = Math.max(0,Math.min(1,(work-nominalWorkMinMs)/(nominalWorkMaxMs-nominalWorkMinMs)));
+  const fastInterval = 3_600_000/rateMax;
+  const slowInterval = 3_600_000/rateMin;
+  const interval = fastInterval + fraction*(slowInterval-fastInterval);
+  return {interval,rate:3_600_000/interval};
+}
+function equipmentActivity(id,part,working = true) {
+  return {id,part,working};
+}
+function buildCycle(tags) {
+  const move = handoffMs;
+  // Minimum dwell times keep short steps visible at the default playback speed.
+  const heat = Math.max(4_800,tags.diHeatPerFlange_ms);
+  const stamp = Math.max(4_800,tags.diEtch_ms);
+  const cool = Math.max(4_200,tags.diCooling_ms/3);
+  const activity = equipmentActivity;
+  const fixture = part=>activity("fixture",part,false);
+  const flangeReady = activity("cart","F2",false);
+  const front = (...positions)=>({resource:"front",ms:move,positions:()=>positions});
+  return [
+    front(activity("infeed","S"),activity("robot")),
+    front(activity("hopper","F1"),fixture("S")),
+    front(activity("cart","F1"),fixture("S")),
+    front(activity("robot","F1"),fixture("S")),
+    {
+      resource:"front",ms:Math.max(heat,move+stamp+move),
+      positions:elapsed=>{
+        let prep = flangeReady;
+        if (elapsed < move) prep = activity("hopper","F2");
+        else if (elapsed < move+stamp) prep = activity("stamp","F2");
+        else if (elapsed < move+stamp+move) prep = activity("cart","F2");
+        return [activity("heater","F1",elapsed < heat),prep,fixture("S")];
+      }
+    },
+    front(activity("fixture","S+F1"),activity("robot"),flangeReady),
+    front(activity("fixture","S+F1"),activity("robot"),flangeReady),
+    front(activity("robot","F2"),fixture("S+F1")),
+    {resource:"front",ms:heat,positions:()=>[activity("heater","F2"),fixture("S+F1")]},
+    front(activity("fixture","A"),activity("robot")),
+    front(activity("robot","A")),
+    ...["cool1","cool2","cool3"].map(id=>({resource:id,ms:cool,positions:()=>[activity(id,"A")]})),
+    {resource:"discharge",ms:5_200,positions:(_,route)=>[activity("deflector"),activity(route==="QC" ? "qc" : "exit","A")]}
+  ];
+}
+
+class VirtualCell {
+  state = "stopped";
+  eStop = false;
+  fault = null;
+  active = null;
+  revision = 0;
+  exitCount = 0;
+  qcCount = 0;
+  forceQC = false;
+  jobs = [];
+  phases = [];
+  serial = 0;
+  nextLaunch = 0;
+
+  get total() { return this.exitCount + this.qcCount; }
+  get dischargeRoute() { return this.jobs.find(job=>job.route)?.route ?? null; }
+  get nextRoute() {
+    return this.forceQC || (this.total + 1) % qcInterval === 0 ? "QC" : "Exit";
+  }
+  assertWritable() {
+    if (this.state === "running") throw new Error("Stop the cell before changing recipes.");
+    if (this.state === "faulted") throw new Error("Dismiss the fault, release the E-stop if pressed, and reset the fault before changing recipes.");
+  }
+  load(recipe) {
+    this.assertWritable();
+    validateRecipe(recipe);
+    const tags = Object.freeze(mapTags(recipe));
+    this.active = Object.freeze({
+      recipe:Object.freeze({...recipe}), tags, pace:Object.freeze(recipePace(tags)), revision:++this.revision
+    });
+    return this.active;
+  }
+  start(now) {
+    if (this.state !== "stopped" || !this.active) return false;
+    this.phases = buildCycle(this.active.tags);
+    this.jobs = [];
+    this.nextLaunch = now;
+    this.state = "running";
+    this.tick(now);
+    return true;
+  }
+  stop() {
+    if (this.state !== "running") return false;
+    this.state = "stopped";
+    this.jobs = [];
+    return true;
+  }
+  pressEStop(now) {
+    if (this.eStop) return false;
+    this.eStop = true;
+    this.fault = {kind:"estop",station:"controls",at:now,acknowledged:false};
+    this.state = "faulted";
+    return true;
+  }
+  releaseEStop() {
+    if (!this.eStop || !this.fault.acknowledged) return false;
+    this.eStop = false;
+    return true;
+  }
+  triggerFault(station,now) {
+    if (this.state === "faulted" || !equipment.has(station)) return false;
+    this.fault = {kind:"station",station,at:now,acknowledged:false};
+    this.state = "faulted";
+    return true;
+  }
+  dismissFault() {
+    if (!this.fault || this.fault.acknowledged) return false;
+    this.fault.acknowledged = true;
+    return true;
+  }
+  resetFault() {
+    if (this.state !== "faulted" || this.eStop || !this.fault.acknowledged) return false;
+    this.state = "stopped";
+    this.fault = null;
+    this.jobs = [];
+    return true;
+  }
+  toggleQC() {
+    if (this.state === "faulted" || this.dischargeRoute) return false;
+    this.forceQC = !this.forceQC;
+    return true;
+  }
+  positions(now) {
+    const time = this.fault?.at ?? now;
+    return this.jobs.flatMap(job=>{
+      const phase = this.phases[job.phase];
+      const elapsed = Math.min(phase.ms,Math.max(0,time-job.started));
+      return phase.positions(elapsed,job.route).map(position=>({...position,job:job.id}));
+    });
+  }
+  occupied(resource) {
+    return this.jobs.some(job=>this.phases[job.phase].resource===resource);
+  }
+  tick(now) {
+    if (this.state !== "running") return null;
+    let discharge = null;
+    // Advance older work first. The shared front end and each downstream position hold one assembly.
+    for (const job of [...this.jobs]) {
+      const phase = this.phases[job.phase];
+      if (now-job.started < phase.ms) continue;
+      const next = this.phases[job.phase+1];
+      if (next) {
+        if (next.resource!==phase.resource && this.occupied(next.resource)) continue;
+        job.phase++;
+        job.started = now;
+        if (next.resource==="discharge") job.route = this.nextRoute;
+        continue;
+      }
+      if (job.route==="QC") this.qcCount++;
+      else this.exitCount++;
+      this.forceQC = false;
+      discharge = {route:job.route,id:job.id};
+      this.jobs = this.jobs.filter(current=>current!==job);
+    }
+    if (now>=this.nextLaunch && !this.occupied("front")) {
+      this.jobs.push({id:++this.serial,phase:0,started:now,route:null});
+      this.nextLaunch = now+this.active.pace.interval;
+    }
+    return discharge;
+  }
+}
+async function openZip(file) {
+  if(file.size > 10_000_000) throw new Error("Choose a workbook smaller than 10 MB.");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const view = new DataView(bytes.buffer);
+  const u16 = i=>view.getUint16(i,true), u32 = i=>view.getUint32(i,true);
+  let end = bytes.length - 22;
+  while(end >= Math.max(0,bytes.length-65557) && (u32(end) !== 0x06054b50 || end+22+u16(end+20) !== bytes.length)) end--;
+  if(end < Math.max(0,bytes.length-65557)) throw new Error("Choose a valid .xlsx workbook.");
+  const files = new Map();
+  const decoder = new TextDecoder("utf-8",{fatal:true});
+  let offset = u32(end+16);
+  for(let index=0;index<u16(end+10);index++) {
+    if(u32(offset) !== 0x02014b50) throw new Error("Invalid workbook directory.");
+    const nameSize = u16(offset+28);
+    const name = decoder.decode(bytes.subarray(offset+46,offset+46+nameSize));
+    files.set(name,{method:u16(offset+10),compressed:u32(offset+20),size:u32(offset+24),local:u32(offset+42)});
+    offset += 46 + nameSize + u16(offset+30) + u16(offset+32);
+  }
+  return async name=>{
+    const entry = files.get(name);
+    if(!entry) return null;
+    const {local,compressed,size,method} = entry;
+    if(size > 12_000_000 || u32(local) !== 0x04034b50) throw new Error("Invalid or oversized workbook entry.");
+    const start = local+30+u16(local+26)+u16(local+28);
+    const packed = bytes.subarray(start,start+compressed);
+    if(packed.length !== compressed) throw new Error("Workbook entry is incomplete.");
+    if(method === 0 && packed.length === size) return decoder.decode(packed);
+    if(method !== 8) throw new Error("Unsupported workbook compression.");
+    const reader = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+    const data = new Uint8Array(size);
+    let written = 0;
+    try {
+      while(true) {
+        const {done,value} = await reader.read();
+        if(done) break;
+        if(written + value.length > size) throw new Error("Workbook entry exceeds its declared size.");
+        data.set(value,written);
+        written += value.length;
+      }
+    } finally { await reader.cancel(); }
+    if(written !== size) throw new Error("Workbook entry is incomplete.");
+    return decoder.decode(data);
+  };
+}
+function xml(text) {
+  if(text === null) throw new Error("Required workbook data is missing.");
+  const doc = new DOMParser().parseFromString(text,"application/xml");
+  if(doc.querySelector("parsererror")) throw new Error("Workbook XML could not be read.");
+  return doc;
+}
+const nodes = (root,name) => [...root.getElementsByTagNameNS("*",name)];
+const cellText = node => nodes(node,"t").map(t=>t.textContent).join("");
+async function readRecipes(file) {
+  const read = await openZip(file);
+  const book = xml(await read("xl/workbook.xml"));
+  const relationships = xml(await read("xl/_rels/workbook.xml.rels"));
+  const sheet = nodes(book,"sheet").find(node=>node.getAttribute("name")==="Recipes");
+  if (!sheet) throw new Error('Worksheet "Recipes" was not found.');
+  const relationshipId = [...sheet.attributes].find(attr=>attr.localName==="id")?.value;
+  const relation = nodes(relationships,"Relationship").find(node=>node.getAttribute("Id")===relationshipId);
+  const target = relation?.getAttribute("Target");
+  if (!target || relation.getAttribute("TargetMode")==="External") throw new Error("Recipe worksheet path is missing.");
+  const path = new URL(target,"https://workbook.invalid/xl/workbook.xml").pathname.slice(1);
+  const worksheet = xml(await read(path));
+  const sharedText = await read("xl/sharedStrings.xml");
+  const strings = sharedText ? nodes(xml(sharedText),"si").map(cellText) : [];
+  const rows = nodes(worksheet,"row").map((row,index)=>{
+    const cells = new Map();
+    for (const cell of nodes(row,"c")) {
+      const ref = cell.getAttribute("r");
+      const column = ref?.match(/^[A-Z]+/)?.[0];
+      if (!column) continue;
+      const type = cell.getAttribute("t");
+      let value = nodes(cell,"v")[0]?.textContent ?? "";
+      if (type === "inlineStr") value = cellText(cell);
+      if (type === "s" && value !== "") value = strings[Number(value)] ?? "";
+      cells.set(column, {ref,value:value.trim(),formula:nodes(cell,"f")[0]?.textContent ?? ""});
+    }
+    return {number:Number(row.getAttribute("r") ?? index+1),cells};
+  });
+  const first = rows.find(row=>row.number===1);
+  if (!first) throw new Error("Place recipe headers in row 1.");
+  const columns = new Map();
+  for (const header of headers) {
+    const matches = [...first.cells].filter(([,cell])=>cell.value===header);
+    const required = requiredHeaders.includes(header);
+    if (matches.length > 1 || (required && matches.length === 0)) {
+      throw new Error("Row 1 must contain exactly one " + header + " column.");
+    }
+    if (matches.length) columns.set(header,matches[0][0]);
+  }
+  const recipes = new Map();
+  const knownColumns = [...columns.values()];
+  for (const {number,cells} of rows) {
+    if (number===1 || !knownColumns.some(column=>cells.get(column)?.value || cells.get(column)?.formula)) continue;
+    const values = Object.fromEntries(headers.map(key=>[key,cells.get(columns.get(key))?.value]));
+    const stampCell = cells.get(columns.get("Etch_s"));
+    const odCell = cells.get(columns.get("FlangeOD_in"));
+    const formula = stampCell?.formula.replace(/[\s$]/g,"").toUpperCase() ?? "";
+    values.stampFromOD = !!odCell && formula === stampFormula(odCell.ref);
+    const recipe = normalizeRecipe(values,true);
+    if (recipe.stampFromOD) recipe.Etch_s = estimatedStamp(recipe.FlangeOD_in);
+    try {
+      validateRecipe(recipe);
+      if (recipes.has(recipe.AssemblyPN)) throw new Error("Duplicate assembly P/N " + recipe.AssemblyPN + ".");
+    } catch (error) {
+      throw new Error("Row " + number + " · " + error.message);
+    }
+    recipes.set(recipe.AssemblyPN,recipe);
+  }
+  if (!recipes.size) throw new Error("The Recipes worksheet has no data rows.");
+  return recipes;
+}
+
+const xmlHeader = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const sheetNs = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+const officeRel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const packageRel = "http://schemas.openxmlformats.org/package/2006/relationships";
+const contentNs = "http://schemas.openxmlformats.org/package/2006/content-types";
+const guideRows = [
+  ["Cell 730 recipe export"],
+  ["Source: Catalog saved in the SS6 virtual HMI. Original Dodge rows were supplied in the recipe workbook."],
+  ["Use one unique AssemblyPN per row. SprocketPN and FlangePN can be reused across recipes."],
+  ["Keep the Recipes tab and the column headers. Dimensions are in inches and process times are in seconds."],
+  ["Etch_s is the stamp time. Formula cells use the 5.00 s at 2.606 in and 11.00 s at 5.402 in estimate."],
+  ["Cooling values and PLC mapping are for simulation."]
+];
+const xmlText = value=>String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g,"")
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function worksheetXML(rows, widths, options = {}) {
+  const {formulaFor,filter} = options;
+  const cellXML = (value,row,col)=>{
+    const address = String.fromCharCode(65+col) + (row+1);
+    if (value == null || value==="") return "";
+    if (typeof value === "number") {
+      const formula = formulaFor?.(row,col);
+      return `<c r="${address}">${formula ? "<f>"+xmlText(formula)+"</f>" : ""}<v>${value}</v></c>`;
+    }
+    return `<c r="${address}" t="inlineStr"${row===0 ? ' s="1"' : ""}><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
+  };
+  const columns = widths.map((width,index)=>`<col min="${index+1}" max="${index+1}" width="${width}" customWidth="1"/>`).join("");
+  const sheetData = rows.map((row,index)=>`<row r="${index+1}">${row.map((value,col)=>cellXML(value,index,col)).join("")}</row>`).join("");
+  const frozen = filter ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' : "";
+  const filterRange = filter ? `<autoFilter ref="A1:${String.fromCharCode(64+widths.length)}${rows.length}"/>` : "";
+  return `${xmlHeader}<worksheet xmlns="${sheetNs}"><sheetViews><sheetView workbookViewId="0">${frozen}</sheetView></sheetViews><cols>${columns}</cols><sheetData>${sheetData}</sheetData>${filterRange}</worksheet>`;
+}
+function makeWorkbook(recipes) {
+  const records = [...recipes.values()];
+  const values = [headers,...records.map(recipe=>headers.map(key=>recipe[key]))];
+  const types = {
+    "/xl/workbook.xml":"spreadsheetml.sheet.main",
+    "/xl/styles.xml":"spreadsheetml.styles",
+    "/xl/worksheets/sheet1.xml":"spreadsheetml.worksheet",
+    "/xl/worksheets/sheet2.xml":"spreadsheetml.worksheet"
+  };
+  const overrides = Object.entries(types).map(([path,type])=>
+    `<Override PartName="${path}" ContentType="application/vnd.openxmlformats-officedocument.${type}+xml"/>`).join("");
+  const relationships = entries=>xmlHeader+`<Relationships xmlns="${packageRel}">`+entries.map(([id,type,target])=>
+    `<Relationship Id="${id}" Type="${officeRel}/${type}" Target="${target}"/>`).join("")+"</Relationships>";
+  const styles = `${xmlHeader}<styleSheet xmlns="${sheetNs}">
+    <fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts>
+    <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF163350"/><bgColor indexed="64"/></patternFill></fill></fills>
+    <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+    <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+    <cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>
+    <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+    </styleSheet>`;
+  return packZip({
+    "[Content_Types].xml":`${xmlHeader}<Types xmlns="${contentNs}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${overrides}</Types>`,
+    "_rels/.rels":relationships([["rId1","officeDocument","xl/workbook.xml"]]),
+    "xl/workbook.xml":`${xmlHeader}<workbook xmlns="${sheetNs}" xmlns:r="${officeRel}"><bookViews><workbookView activeTab="0"/></bookViews><sheets><sheet name="Recipes" sheetId="1" r:id="rId1"/><sheet name="Import guide" sheetId="2" r:id="rId2"/></sheets><calcPr calcId="0" fullCalcOnLoad="1"/></workbook>`,
+    "xl/_rels/workbook.xml.rels":relationships([["rId1","worksheet","worksheets/sheet1.xml"],["rId2","worksheet","worksheets/sheet2.xml"],["rId3","styles","styles.xml"]]),
+    "xl/styles.xml":styles,
+    "xl/worksheets/sheet1.xml":worksheetXML(values,[19,18,42,18,18,18,18,16,16,16,19,20,24,18,23,20,21,23,23,23],{
+      filter:true, formulaFor:(row,col)=>col===8 && records[row-1]?.stampFromOD ? stampFormula("F"+(row+1)) : ""
+    }),
+    "xl/worksheets/sheet2.xml":worksheetXML(guideRows,[115])
+  });
+}
+
+// Store uncompressed entries so the offline HMI can write a native .xlsx without a network library.
+function packZip(entries) {
+  const encoder = new TextEncoder();
+  const parts = [];
+  const directory = [];
+  const crc = bytes=>{
+    let sum = 0xffffffff;
+    for (const byte of bytes) {
+      sum ^= byte;
+      for (let bit=0;bit<8;bit++) sum = (sum>>>1) ^ ((sum&1) ? 0xedb88320 : 0);
+    }
+    return (sum^0xffffffff)>>>0;
+  };
+  const record = size=>new DataView(new ArrayBuffer(size));
+  let offset = 0;
+  let directorySize = 0;
+  for (const [path,content] of Object.entries(entries)) {
+    const name = encoder.encode(path);
+    const data = encoder.encode(content);
+    const checksum = crc(data);
+    const local = record(30);
+    local.setUint32(0,0x04034b50,true);
+    local.setUint16(4,20,true);
+    local.setUint16(12,33,true);
+    local.setUint32(14,checksum,true);
+    local.setUint32(18,data.length,true);
+    local.setUint32(22,data.length,true);
+    local.setUint16(26,name.length,true);
+    parts.push(local.buffer,name,data);
+    const central = record(46);
+    central.setUint32(0,0x02014b50,true);
+    central.setUint16(4,20,true);
+    central.setUint16(6,20,true);
+    central.setUint16(14,33,true);
+    central.setUint32(16,checksum,true);
+    central.setUint32(20,data.length,true);
+    central.setUint32(24,data.length,true);
+    central.setUint16(28,name.length,true);
+    central.setUint32(42,offset,true);
+    directory.push(central.buffer,name);
+    offset += local.byteLength+name.length+data.length;
+    directorySize += central.byteLength+name.length;
+  }
+  const end = record(22);
+  end.setUint32(0,0x06054b50,true);
+  end.setUint16(8,directory.length/2,true);
+  end.setUint16(10,directory.length/2,true);
+  end.setUint32(12,directorySize,true);
+  end.setUint32(16,offset,true);
+  return new Blob([...parts,...directory,end.buffer],{type:xlsxMime});
+}
+const cell = new VirtualCell();
+const speedInput = el("playback-speed");
+const playback = {speed:speedInput.valueAsNumber, elapsed:null, processed:0, updatedAt:0};
+const storageKey = "cell730.ss6.recipes.v2";
+let catalog = new Map();
+let families = new Map();
+let sourceName = "";
+let pending = null;
+let upload = 0;
+let selectedPN = "";
+let beforeAdd = "";
+let adding = false;
+let stampFromOD = false;
+let timer = 0;
+let announcedParallel = false;
+
+const say = (id,text)=>{
+  const node = el(id);
+  if (node.textContent !== text) node.textContent = text;
+};
+const historyButtons = [...document.querySelectorAll("[data-history]")];
+const historyEntries = [];
+const historyLimit = 80;
+const historyPageSize = 6;
+let historyFilter = "all";
+let historyPage = 0;
+const historyEmptyText = {all:"No events this session.",status:"No status updates this session.",fault:"No faults this session."};
+const eventTime = new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"});
+
+function renderHistory() {
+  const entries = historyFilter === "all" ? historyEntries : historyEntries.filter(entry=>entry.kind === historyFilter);
+  const pageCount = Math.max(1,Math.ceil(entries.length/historyPageSize));
+  historyPage = Math.min(pageCount-1,Math.max(0,historyPage));
+  const offset = historyPage*historyPageSize;
+  const rows = entries.slice(offset,offset+historyPageSize).map(({at,kind,message})=>{
+    const row = document.createElement("li");
+    const time = document.createElement("time");
+    const detail = document.createElement("span");
+    row.dataset.kind = kind;
+    time.dateTime = at.toISOString();
+    time.textContent = eventTime.format(at);
+    detail.textContent = message;
+    detail.title = message;
+    row.append(time,detail);
+    return row;
+  });
+  el("history-items").replaceChildren(...rows);
+  el("history-empty").hidden = entries.length > 0;
+  say("history-empty",historyEmptyText[historyFilter]);
+  say("history-page-label",entries.length ? "Page " + (historyPage+1) + " of " + pageCount + " · " + entries.length + " events" : "0 events");
+  el("history-prev").disabled = historyPage === 0;
+  el("history-next").disabled = historyPage+1 >= pageCount;
+  el("export-history").disabled = !historyEntries.length;
+}
+for (const button of historyButtons) {
+  button.onclick = ()=>{
+    historyFilter = button.dataset.history;
+    historyPage = 0;
+    for (const option of historyButtons) option.setAttribute("aria-pressed",String(option === button));
+    renderHistory();
+  };
+}
+el("history-prev").onclick = ()=>{ historyPage--; renderHistory(); };
+el("history-next").onclick = ()=>{ historyPage++; renderHistory(); };
+function recordEvent(message,kind = "status") {
+  historyEntries.unshift({at:new Date(),kind,recipe:cell.active?.recipe.AssemblyPN ?? "",message});
+  const entriesOfKind = historyEntries.filter(entry=>entry.kind === kind);
+  if (entriesOfKind.length > historyLimit) historyEntries.splice(historyEntries.indexOf(entriesOfKind[historyLimit]),1);
+  if (!el("history").hidden) renderHistory();
+}
+function csvField(value) {
+  const text = /^\s*[=+\-@]|^[\t\r\n]/.test(value) ? "'" + value : value;
+  return '"' + text.replaceAll('"','""') + '"';
+}
+el("export-history").onclick = ()=>{
+  if (!historyEntries.length) return;
+  const rows = [["Timestamp (UTC)","Type","Active recipe","Message"],
+    ...[...historyEntries].reverse().map(entry=>[entry.at.toISOString(),entry.kind,entry.recipe,entry.message])];
+  const csv = "\uFEFF" + rows.map(row=>row.map(csvField).join(",")).join("\r\n") + "\r\n";
+  const date = new Date().toISOString().slice(0,10);
+  download(new Blob([csv],{type:"text/csv;charset=utf-8"}),"Cell730_Run_History_" + date + ".csv");
+};
+
+function report(message,tone = "",kind = "status") {
+  say("message",message);
+  el("message").className = "message " + tone;
+  recordEvent(message,kind);
+}
+const hmiDisplay = el("hmi-display");
+function scaleConsole() {
+  hmiDisplay.style.setProperty("--console-scale",hmiDisplay.getBoundingClientRect().width / 1024);
+}
+if (typeof ResizeObserver === "function") new ResizeObserver(scaleConsole).observe(hmiDisplay);
+else window.addEventListener("resize",scaleConsole);
+scaleConsole();
+
+const displaySettings = el("display-settings");
+const frame = el("hmi-frame");
+const bezelToggle = el("show-bezel");
+const calibrationInput = el("calibration-mm");
+const displayStorageKey = "cell730.ss6.display.v1";
+let pixelsPerMm = null;
+let sizeMode = "fit";
+
+try {
+  const saved = JSON.parse(localStorage.getItem(displayStorageKey) ?? "null");
+  bezelToggle.checked = saved?.bezel === true;
+  if (Number.isFinite(saved?.pixelsPerMm) && saved.pixelsPerMm > 0) {
+    pixelsPerMm = saved.pixelsPerMm;
+    if (saved.sizeMode === "actual") sizeMode = "actual";
+  }
+} catch {
+  // Fit mode is available when display preferences cannot be read.
+}
+
+function showDisplaySize() {
+  if (!displaySettings.open) return;
+  if (sizeMode === "fit") {
+    say("display-size-status","Fitted to this window.");
+    return;
+  }
+  const modelWidth = Number(getComputedStyle(frame).getPropertyValue("--model-width"));
+  const fits = frame.getBoundingClientRect().width >= modelWidth * pixelsPerMm - 0.5;
+  say("display-size-status",fits ? "Actual size is active." :
+    "The window is too small for actual size. Showing a fitted view.");
+}
+
+function applyDisplaySize() {
+  frame.dataset.bezel = String(bezelToggle.checked);
+  frame.dataset.size = sizeMode;
+  if (pixelsPerMm !== null) frame.style.setProperty("--px-per-mm",pixelsPerMm + "px");
+  showDisplaySize();
+}
+
+function saveDisplaySize() {
+  applyDisplaySize();
+  try {
+    localStorage.setItem(displayStorageKey,JSON.stringify({bezel:bezelToggle.checked,pixelsPerMm,sizeMode}));
+  } catch {
+    // The display mode still works for the current session.
+  }
+}
+
+el("display-size").onclick = ()=>{
+  displaySettings.showModal();
+  if (pixelsPerMm !== null) {
+    const measured = el("calibration-rule").getBoundingClientRect().width / pixelsPerMm;
+    calibrationInput.value = measured.toFixed(2);
+  }
+  showDisplaySize();
+};
+el("close-display-settings").onclick = ()=>displaySettings.close();
+bezelToggle.onchange = saveDisplaySize;
+el("fit-display").onclick = ()=>{
+  sizeMode = "fit";
+  saveDisplaySize();
+};
+el("calibration-form").onsubmit = event=>{
+  event.preventDefault();
+  const measured = calibrationInput.valueAsNumber;
+  const width = el("calibration-rule").getBoundingClientRect().width;
+  if (!Number.isFinite(measured) || measured <= 0 || width <= 0) return;
+  pixelsPerMm = width / measured;
+  sizeMode = "actual";
+  saveDisplaySize();
+};
+window.addEventListener("resize",showDisplaySize);
+applyDisplaySize();
+
+const fullscreenButton = el("fullscreen");
+if (document.fullscreenEnabled && typeof document.documentElement.requestFullscreen === "function") {
+  fullscreenButton.hidden = false;
+  document.addEventListener("fullscreenchange",()=>{
+    fullscreenButton.textContent = document.fullscreenElement ? "Exit Full Screen" : "Full Screen";
+  });
+  fullscreenButton.onclick = async ()=>{
+    displaySettings.close();
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      report("Use your browser’s full-screen command to hide its toolbar.","warn");
+    }
+  };
+}
+function navigate(page) {
+  for (const section of el("view").children) section.hidden = section.id !== page;
+  for (const button of document.querySelectorAll("nav button")) {
+    if (button.dataset.page === page) button.setAttribute("aria-current","page");
+    else button.removeAttribute("aria-current");
+  }
+  if (page === "history") renderHistory();
+  if (page === "plc") renderMap(playback.elapsed ?? 0);
+}
+for (const button of document.querySelectorAll("[data-page]")) button.onclick = ()=>navigate(button.dataset.page);
+
+function paneNavigation(group,onSelect) {
+  const buttons = [...document.querySelectorAll("[data-" + group + "-page]")];
+  const panes = document.querySelectorAll("[data-" + group + "-pane]");
+  function select(page) {
+    for (const pane of panes) pane.hidden = pane.getAttribute("data-" + group + "-pane") !== page;
+    for (const button of buttons) {
+      button.setAttribute("aria-pressed",String(button.getAttribute("data-" + group + "-page") === page));
+    }
+    onSelect?.(page);
+  }
+  for (const button of buttons) button.onclick = ()=>select(button.getAttribute("data-" + group + "-page"));
+  return select;
+}
+const showRecipePane = paneNavigation("recipe",page=>{ if (page === "tags") renderTags(); });
+paneNavigation("plc");
+
+function table(parent,titles,rows) {
+  const result = document.createElement("table");
+  const head = result.createTHead().insertRow();
+  for (const title of titles) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = title;
+    head.append(th);
+  }
+  const body = result.createTBody();
+  for (const row of rows) {
+    const line = body.insertRow();
+    for (const value of row) line.insertCell().textContent = value ?? "—";
+  }
+  parent.replaceChildren(result);
+  return [...body.rows];
+}
+
+const plcCards = [
+  ["plc-inputs", [
+    ["IN 1",2,"S01","B1 Etcher position prox"],
+    ["IN 2",3,"S02","B2 Hopper left prox"],
+    ["IN 3",4,"S03","B3 Hopper middle prox"],
+    ["IN 4",5,"S04","B4 Hopper right prox"],
+    ["IN 5",6,"S05","B5 Robot pickup prox"],
+    ["IN 9",11,"401","A4 Cart drive ready"],
+    ["IN 10",12,"402","A4 Cart drive status"],
+    ["IN 11",13,"SS4-ENTRY","SS4-B1 Cooling entry prox"],
+    ["IN 12",14,"SS5-HLFB","SS5-M1 Deflector feedback"],
+    ["IN 13",15,"SS5-ARR","SS5-B1 Arrival light sensor"],
+    ["IN 14",16,"SS5-CLEAR","SS5-B2 QC exit light sensor"]
+  ]],
+  ["plc-outputs", [
+    ["OUT 1",2,"301","Y1 Valve solenoid"],
+    ["OUT 2",3,"302","K1 Cart magnet relay"],
+    ["OUT 3",4,"303","K2 Etcher trigger relay"],
+    ["OUT 4",5,"304","A4 Cart drive enable"],
+    ["OUT 5",6,"SS4-EN","SS4-K1 Cooling blower enable"],
+    ["OUT 7",8,"SS5-EN","SS5-M1 Deflector enable"],
+    ["OUT 8",9,"SS5-POS","SS5-M1 Input A · Position"]
+  ]],
+  ["plc-analog", [
+    ["I1+",2,"A01","A1 / M1 Linear actuator · 4–20 mA"],
+    ["I2+",3,"A02","A2 / M2 Linear actuator · 4–20 mA"],
+    ["I3+",4,"A03","A3 / M3 Linear actuator · 4–20 mA"]
+  ]]
+];
+const plcLinks = [
+  ["NET01","PLC1 CPU Ethernet ↔ SW1 port 1"],
+  ["NET02","A4 XF1 ↔ SW1 port 2"],
+  ["NET03","IOL1 XF1 ↔ SW1 port 3"],
+  ["NET-SS4","SS4-A1 XF1 ↔ SW1 port 5"],
+  ["NET-RB1","RB1 Ethernet ↔ SW1 port 7"],
+  ["IOL-CQ","IOL1 X0:4 ↔ REG IO-Link C/Q"],
+  ["1:DI","1B1 Jaws open → Robot wrist DI 1"],
+  ["2:DI","1B2 Jaws closed → Robot wrist DI 2"]
+];
+const plcLights = new Map();
+const plcRecipeValues = new Map();
+
+function buildPlcView() {
+  for (const [target,points] of plcCards) {
+    const rows = table(el(target),["Channel","Wire","Signal","Value"],
+      points.map(([channel,,wire,signal])=>[channel,wire,signal,null]));
+    for (const [index,[,terminal,wire]] of points.entries()) {
+      const [channel,,,value] = rows[index].cells;
+      const terminalLabel = document.createElement("small");
+      terminalLabel.textContent = "RTB " + terminal;
+      channel.append(terminalLabel);
+      const state = document.createElement("span");
+      state.className = "plc-state";
+      state.dataset.state = "none";
+      const dot = document.createElement("i");
+      dot.className = "dot";
+      dot.setAttribute("aria-hidden","true");
+      const label = document.createElement("span");
+      label.textContent = "—";
+      state.append(dot,label);
+      value.replaceChildren(state);
+      plcLights.set(wire,{state,label});
+    }
+  }
+  const recipeTags = [["sAssemblyPN",null],["sFlangePN",null],
+    ...recipeFields.map(({tag,unit})=>[tag,unit === "s" ? "ms" : unit])];
+  const rows = table(el("plc-recipe"),["Tag","Value","Unit"],recipeTags.map(([tag,unit])=>[tag,null,unit]));
+  for (const [index,[tag]] of recipeTags.entries()) plcRecipeValues.set(tag,rows[index].cells[1]);
+  table(el("plc-links"),["Signal","Connection"],plcLinks);
+}
+
+function renderPlcTags(groups) {
+  const running = cell.state === "running";
+  const active = station=>running && groups.get(station)?.some(position=>position.working) === true;
+  // These are station-activity proxies. Rev G does not specify device timing or bit polarity.
+  const values = {
+    S01:groups.has("stamp"), S03:groups.has("hopper"), S05:groups.has("cart"),
+    "SS4-ENTRY":groups.has("cool1"), "SS5-ARR":groups.has("deflector"),
+    "302":active("hopper") || active("stamp"), "303":active("stamp"),
+    "SS4-EN":["cool1","cool2","cool3"].some(active),
+    "SS5-EN":active("deflector"), "SS5-POS":active("deflector") ? cell.dischargeRoute : null
+  };
+  for (const [wire,{state,label}] of plcLights) {
+    const value = values[wire];
+    const text = value === true ? "On" : value === false ? "Off" : value ?? "—";
+    if (label.textContent === text) continue;
+    label.textContent = text;
+    state.dataset.state = value === true ? "on" : value === false ? "off" : value == null ? "none" : "route";
+  }
+  for (const [tag,node] of plcRecipeValues) {
+    const text = String(cell.active?.tags[tag] ?? "—");
+    if (node.textContent !== text) node.textContent = text;
+  }
+}
+
+const stations = new Map([...document.querySelectorAll("[data-station]")].map(node=>[node.dataset.station,node]));
+const lastBlockContents = new Map();
+function jobLabel(id) {
+  return "#" + String(id).padStart(2,"0");
+}
+function renderMap(now) {
+  const groups = new Map();
+  for (const position of cell.positions(now)) {
+    if (!groups.has(position.id)) groups.set(position.id,[]);
+    groups.get(position.id).push(position);
+  }
+  for (const [id,node] of stations) {
+    const positions = groups.get(id) ?? [];
+    const hasMotion = cell.state === "running" && positions.some(position=>position.working);
+    let mode = hasMotion ? "active" : positions.length ? "held" : "idle";
+    if (cell.fault?.station === id) mode = "fault";
+    node.dataset.mode = mode;
+    const occupants = node.querySelector(".occupants");
+    if (!occupants) continue;
+    const parts = positions.filter(position=>position.part);
+    const signature = JSON.stringify([mode,parts]);
+    if (lastBlockContents.get(id) === signature) continue;
+    lastBlockContents.set(id,signature);
+    if (parts.length) {
+      occupants.replaceChildren(...parts.map(({part,job,working})=>{
+        const token = document.createElement("span");
+        token.className = "part-token" + (working && cell.state === "running" ? "" : " waiting");
+        token.textContent = jobLabel(job) + " " + part;
+        return token;
+      }));
+    } else {
+      const signal = document.createElement("span");
+      signal.className = "block-signal";
+      signal.textContent = {active:"Active",idle:"Idle",held:"Held",fault:"FAULT"}[mode];
+      occupants.replaceChildren(signal);
+    }
+    node.setAttribute("aria-label",equipment.get(id) + " · " + mode +
+      (parts.length ? " · " + parts.map(p=>jobLabel(p.job)+" "+p.part).join(", ") : ""));
+  }
+  say("in-flight",cell.jobs.length + (cell.state === "faulted" && cell.jobs.length ? " held" : " in process"));
+  if (!el("plc").hidden) renderPlcTags(groups);
+}
+function renderRate() {
+  const rate = cell.active?.pace.rate;
+  const meter = el("rate");
+  const needle = el("rate-hand");
+  needle.hidden = !rate;
+  if (!rate) return;
+  const pph = rate.toFixed(1);
+  needle.style.setProperty("--angle",((rate-rateMin)/(rateMax-rateMin)*180-90) + "deg");
+  say("rate-value",pph);
+  meter.setAttribute("role","meter");
+  meter.setAttribute("aria-valuemin",String(rateMin));
+  meter.setAttribute("aria-valuemax",String(rateMax));
+  meter.setAttribute("aria-valuenow",pph);
+  meter.setAttribute("aria-valuetext",pph + " parts per hour target");
+}
+function renderCell() {
+  const {state,eStop,fault,active} = cell;
+  say("mode",eStop ? "FAULTED · E-STOP" : state.toUpperCase());
+  el("mode").dataset.state = state;
+  const assembly = active?.recipe.AssemblyPN ?? "None loaded";
+  say("active-recipe",assembly);
+  el("active-recipe").title = assembly;
+  for (const status of ["running","stopped","faulted","estop"]) {
+    const lamp = el("lamp-"+status);
+    const on = status === "estop" ? eStop : state === status;
+    lamp.classList.toggle("on",on);
+    lamp.setAttribute("aria-label",lamp.textContent.trim()+(on ? " indicator on" : " indicator off"));
+  }
+  say("exit-count",String(cell.exitCount));
+  say("qc-count",String(cell.qcCount));
+  say("total-count",String(cell.total));
+  say("route-status",cell.dischargeRoute ? "To "+cell.dischargeRoute : "Next: "+cell.nextRoute);
+  el("route-qc").setAttribute("aria-pressed",String(cell.forceQC));
+  say("route-qc",cell.forceQC ? "Cancel QC Request" : "Route Next to QC");
+  el("route-qc").disabled = state === "faulted" || !!cell.dischargeRoute;
+  el("start").disabled = state !== "stopped" || !active;
+  el("stop").disabled = state !== "running";
+  el("reset").disabled = !fault?.acknowledged || eStop;
+  el("estop").hidden = eStop;
+  el("release").hidden = !eStop;
+  el("fault").disabled = state === "faulted";
+  el("load").disabled = state !== "stopped" || !pending;
+  renderRate();
+  renderMap(playback.elapsed ?? 0);
+}
+function tick() {
+  if (cell.state !== "running") return;
+  const now = performance.now();
+  // Bound catch-up after a long delay so resuming a tab keeps the panel responsive.
+  playback.elapsed += Math.min(now-playback.updatedAt,1_000)*playback.speed;
+  playback.updatedAt = now;
+  const beforeRoute = cell.dischargeRoute;
+  const beforeTotal = cell.total;
+  // A fixed step keeps station and release timing consistent at every playback speed.
+  while (playback.processed+simulationStepMs <= playback.elapsed) {
+    playback.processed += simulationStepMs;
+    const discharge = cell.tick(playback.processed);
+    if (discharge) {
+      const routeCount = discharge.route === "QC" ? cell.qcCount : cell.exitCount;
+      const message = jobLabel(discharge.id) + " discharged to " + discharge.route + ".";
+      if (routeCount === 1) report(message,"good");
+      else recordEvent(message);
+    }
+    if (cell.jobs.length > 1 && !announcedParallel) {
+      announcedParallel = true;
+      report("Parallel assemblies in process. Follow the part IDs on the map.","good");
+    }
+  }
+  if (beforeRoute !== cell.dischargeRoute || beforeTotal !== cell.total) renderCell();
+  else {
+    renderMap(playback.elapsed);
+  }
+}
+speedInput.oninput = ()=>{
+  tick();
+  playback.speed = speedInput.valueAsNumber;
+  speedInput.setAttribute("aria-valuetext",playback.speed + " times real time");
+  say("speed-value",playback.speed + "×");
+};
+function haltTimer() {
+  clearInterval(timer);
+  timer = 0;
+}
+el("start").onclick = ()=>{
+  if (!cell.start(0)) return;
+  playback.elapsed = playback.processed = 0;
+  playback.updatedAt = performance.now();
+  timer = setInterval(tick,playbackFrameMs);
+  report("Cell running · " + cell.active.recipe.AssemblyPN,"good");
+  renderCell();
+};
+el("stop").onclick = ()=>{
+  tick();
+  if (!cell.stop()) return;
+  haltTimer();
+  report("Cell stopped. In-process simulation cleared.");
+  renderCell();
+};
+
+const faultPicker = el("fault-picker");
+const faultBanner = el("fault-banner");
+const faultOptions = el("fault-station");
+for (const [id,name] of equipment) faultOptions.add(new Option(name,id));
+function announceFault() {
+  haltTimer();
+  const {kind,station} = cell.fault;
+  const isEStop = kind === "estop";
+  say("fault-heading",isEStop ? "EMERGENCY STOP" : "CELL FAULT");
+  say("fault-origin",equipment.get(station));
+  say("fault-help",isEStop ? "Cycle halted. Dismiss, release the E-stop, then reset." : "Cycle halted. Dismiss to inspect the red station, then reset.");
+  report(isEStop ? "E-stop pressed. Cell fault latched." : "Fault at " + equipment.get(station) + ". Cell halted.","bad","fault");
+  renderCell();
+  faultBanner.showModal();
+}
+el("estop").onclick = ()=>{
+  tick();
+  if (!cell.pressEStop(playback.elapsed ?? 0)) return;
+  announceFault();
+};
+el("fault").onclick = ()=>{
+  tick();
+  const activeStation = cell.positions(playback.elapsed ?? 0).find(position=>position.working)?.id;
+  faultOptions.value = activeStation ?? "robot";
+  faultPicker.showModal();
+};
+el("cancel-fault").onclick = ()=>faultPicker.close();
+el("inject-fault").onclick = ()=>{
+  tick();
+  if (!cell.triggerFault(faultOptions.value,playback.elapsed ?? 0)) return;
+  faultPicker.close();
+  announceFault();
+};
+faultBanner.addEventListener("cancel",event=>event.preventDefault());
+el("dismiss-fault").onclick = ()=>{
+  if (!cell.dismissFault()) return;
+  faultBanner.close();
+  const isEStop = cell.fault.kind === "estop";
+  const message = isEStop ? "E-stop acknowledged. Release it, then reset." : equipment.get(cell.fault.station) + " fault acknowledged. Reset required.";
+  report(message,"warn","fault");
+  renderCell();
+  el(cell.eStop ? "release" : "reset").focus({preventScroll:true});
+};
+el("release").onclick = ()=>{
+  if (!cell.releaseEStop()) return;
+  report("E-stop released. Reset Fault is required.","warn","fault");
+  renderCell();
+  el("reset").focus({preventScroll:true});
+};
+el("reset").onclick = ()=>{
+  const origin = cell.fault?.kind === "estop" ? "E-stop" : equipment.get(cell.fault?.station);
+  if (!cell.resetFault()) return;
+  report(origin + " fault reset. Cell stopped.","good","fault");
+  renderCell();
+};
+el("route-qc").onclick = ()=>{
+  tick();
+  if (!cell.toggleQC()) return;
+  report(cell.forceQC ? "One-time QC route requested for the next simulated discharge." : "One-time QC route cancelled.");
+  renderCell();
+};
+
+function groupFamilies() {
+  families = new Map();
+  for (const recipe of catalog.values()) {
+    if (!families.has(recipe.FamilyID)) families.set(recipe.FamilyID,[]);
+    families.get(recipe.FamilyID).push(recipe.AssemblyPN);
+  }
+}
+function setOptions(select,placeholder,choices,value = "") {
+  select.replaceChildren(new Option(placeholder,""),...choices.map(([key,label])=>new Option(label,key)));
+  select.value = value;
+}
+function renderPickers() {
+  const selectedFamily = catalog.get(selectedPN)?.FamilyID ?? "";
+  const familyIds = [...families.keys()].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  setOptions(el("family-picker"),"Select part family",familyIds.map(id=>[id,id]),selectedFamily);
+  const partNumbers = (families.get(selectedFamily) ?? []).map(pn=>[pn,pn]);
+  setOptions(el("part-picker"),selectedFamily ? "Select part number" : "Select part family first",partNumbers,selectedPN);
+  el("part-picker").disabled = !selectedFamily;
+  el("family-picker").disabled = !families.size;
+  say("catalog-count",catalog.size ? families.size+" families · "+catalog.size+" part numbers" : "Catalog is empty");
+  el("export").disabled = !catalog.size;
+}
+function draftFromForm() {
+  const input = Object.fromEntries(headers.map(key=>[key,el(key).value]));
+  return normalizeRecipe({...input,stampFromOD});
+}
+function hasEdits() {
+  if (el("editor").hidden) return false;
+  const draft = draftFromForm();
+  if (adding) {
+    return headers.some(key=>key!=="FamilyID" && draft[key] !== null && draft[key] !== "")
+      || (el("family-mode").value === "new" && !!draft.FamilyID);
+  }
+  const saved = catalog.get(selectedPN);
+  return !!saved && [...headers,"stampFromOD"].some(key=>draft[key] !== saved[key]);
+}
+function mayDiscard() {
+  return !hasEdits() || window.confirm("Discard unsaved recipe edits?");
+}
+function fillForm(recipe) {
+  for (const key of headers) el(key).value = recipe[key] ?? "";
+  stampFromOD = recipe.stampFromOD === true;
+  renderDraft();
+}
+function renderTags() {
+  const draft = mapTags(draftFromForm());
+  table(el("mapping"),["Prototype tag","Draft","Active PLC","Unit"],[
+    ["sAssemblyPN", draft.sAssemblyPN || null, cell.active?.tags.sAssemblyPN,"P/N"],
+    ["sFlangePN", draft.sFlangePN || null, cell.active?.tags.sFlangePN,"P/N"],
+    ...recipeFields.map(({tag,unit})=>[tag,draft[tag],cell.active?.tags[tag],unit==="s" ? "ms" : unit])
+  ]);
+}
+function renderDraft() {
+  const saved = catalog.get(selectedPN);
+  say("editor-title",adding ? "New recipe" : (saved?.FamilyID ?? "Recipe") + " / " + (saved?.AssemblyPN ?? ""));
+  say("draft-status",adding ? "Save to add to catalog" : (hasEdits() ? "Unsaved edits" : "Saved recipe"));
+  say("stamp-source",stampFromOD ? "Stamp time follows flange OD. Minimum 5 s." : "Stamp time is editable. Minimum 5 s.");
+  el("estimate").disabled = !Number.isFinite(el("FlangeOD_in").valueAsNumber);
+  el("revert").disabled = !hasEdits();
+  if (!el("tag-details").hidden) renderTags();
+}
+function viewRecipe(pn,log = false) {
+  selectedPN = catalog.has(pn) ? pn : "";
+  adding = false;
+  const recipe = catalog.get(selectedPN);
+  el("empty-editor").hidden = !!recipe;
+  el("editor").hidden = !recipe;
+  el("add-controls").hidden = el("reuse").hidden = true;
+  el("send").hidden = el("revert").hidden = false;
+  el("cancel-add").hidden = true;
+  showRecipePane("identity");
+  el("FamilyID").readOnly = false;
+  renderPickers();
+  if (!recipe) {
+    say("empty-title",catalog.size ? "Select a part family" : "No recipes loaded");
+    say("empty-text",catalog.size ? "Choose a family from View recipes to open its editor." : "Import the Cell 730 workbook or enter a recipe from the HMI.");
+  } else {
+    fillForm(recipe);
+    if (log) report("Recipe retrieved · "+recipe.FamilyID+" / "+recipe.AssemblyPN,"good");
+  }
+}
+el("family-picker").onchange = ()=>{
+  const next = el("family-picker").value;
+  if (!mayDiscard()) { renderPickers(); return; }
+  viewRecipe(families.get(next)?.[0],true);
+};
+el("part-picker").onchange = ()=>{
+  const next = el("part-picker").value;
+  if (!mayDiscard()) { renderPickers(); return; }
+  viewRecipe(next,true);
+};
+el("revert").onclick = ()=>{
+  fillForm(catalog.get(selectedPN));
+  report("Saved recipe restored in the editor.");
+};
+
+function componentOptions(key,keys) {
+  const byNumber = new Map();
+  for (const recipe of catalog.values()) {
+    const pn = recipe[key];
+    if (!byNumber.has(pn)) byNumber.set(pn,new Map());
+    const variants = byNumber.get(pn);
+    const valueKey = JSON.stringify(keys.map(k=>recipe[k]));
+    if (!variants.has(valueKey)) variants.set(valueKey,recipe);
+  }
+  const choices = [];
+  for (const pn of [...byNumber.keys()].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}))) {
+    const variants = byNumber.get(pn);
+    for (const recipe of variants.values()) {
+      choices.push([recipe.AssemblyPN, variants.size === 1 ? pn : pn + " (" + recipe.AssemblyPN + ")"]);
+    }
+  }
+  return choices;
+}
+function selectFamilyMode() {
+  const existing = el("family-mode").value === "existing";
+  el("existing-family-label").hidden = !existing;
+  el("FamilyID").readOnly = existing;
+  el("FamilyID").value = existing ? el("existing-family").value : "";
+  renderDraft();
+}
+function reusePart(select,keys) {
+  const recipe = catalog.get(select.value);
+  if (!adding || !recipe) return;
+  for (const key of keys) {
+    if (key==="stampFromOD") stampFromOD = recipe[key];
+    else el(key).value = recipe[key] ?? "";
+  }
+  renderDraft();
+}
+el("family-mode").onchange = selectFamilyMode;
+el("existing-family").onchange = selectFamilyMode;
+el("reuse-sprocket").onchange = ()=>reusePart(el("reuse-sprocket"),sprocketKeys);
+el("reuse-flange").onchange = ()=>reusePart(el("reuse-flange"),flangeKeys);
+
+el("add").onclick = ()=>{
+  if (!mayDiscard()) return;
+  beforeAdd = adding ? beforeAdd : selectedPN;
+  selectedPN = "";
+  adding = true;
+  showRecipePane("identity");
+  el("cancel-add").hidden = false;
+  el("editor").hidden = el("add-controls").hidden = el("reuse").hidden = false;
+  el("empty-editor").hidden = el("send").hidden = el("revert").hidden = true;
+  el("family-mode").value = "new";
+  el("family-mode").options[1].disabled = !families.size;
+  const preferred = catalog.get(beforeAdd)?.FamilyID ?? "";
+  setOptions(el("existing-family"),"Select existing family",[...families.keys()].sort().map(id=>[id,id]),preferred);
+  setOptions(el("reuse-sprocket"),"Choose saved sprocket",componentOptions("SprocketPN",sprocketKeys));
+  setOptions(el("reuse-flange"),"Choose saved flange",componentOptions("FlangePN",flangeKeys));
+  renderPickers();
+  fillForm({stampFromOD:true});
+  selectFamilyMode();
+  el("FamilyID").focus({preventScroll:true});
+};
+el("cancel-add").onclick = ()=>{
+  if (mayDiscard()) viewRecipe(beforeAdd);
+};
+el("estimate").onclick = ()=>{
+  const value = estimatedStamp(el("FlangeOD_in").valueAsNumber);
+  if (value == null) return;
+  el("Etch_s").value = value;
+  stampFromOD = true;
+  renderDraft();
+};
+for (const {key,unit,min,max} of recipeFields) {
+  el(key).min = min;
+  el(key).max = max;
+  el(key).title = "Simulation range " + min + "–" + max + " " + unit;
+}
+el("editor").addEventListener("input",event=>{
+  if (event.target.id === "Etch_s") stampFromOD = false;
+  if (event.target.id === "FlangeOD_in" && stampFromOD) el("Etch_s").value = estimatedStamp(el("FlangeOD_in").valueAsNumber) ?? "";
+  renderDraft();
+});
+
+function persist() {
+  try {
+    localStorage.setItem(storageKey,JSON.stringify({sourceName,rows:[...catalog.values()]}));
+    return true;
+  } catch {
+    return false;
+  }
+}
+function writeAllowed() {
+  try {
+    cell.assertWritable();
+    return true;
+  } catch (error) {
+    report(error.message,"bad");
+    return false;
+  }
+}
+el("editor").onsubmit = event=>{
+  event.preventDefault();
+  if (!writeAllowed()) return;
+  const draft = draftFromForm();
+  try {
+    validateRecipe(draft);
+    if (draft.AssemblyPN !== selectedPN && catalog.has(draft.AssemblyPN)) {
+      throw new Error("Assembly P/N already exists. Reuse component P/Ns or enter a unique assembly P/N.");
+    }
+    if (adding && el("family-mode").value === "new" && families.has(draft.FamilyID)) {
+      throw new Error("This family already exists. Choose Existing part family to add to it.");
+    }
+    if (adding && el("family-mode").value === "existing" && !families.has(draft.FamilyID)) {
+      throw new Error("Select an existing part family.");
+    }
+  } catch (error) {
+    report("Save rejected. "+error.message,"bad");
+    return;
+  }
+  if (selectedPN && draft.AssemblyPN !== selectedPN) catalog.delete(selectedPN);
+  catalog.set(draft.AssemblyPN,draft);
+  groupFamilies();
+  const stored = persist();
+  viewRecipe(draft.AssemblyPN);
+  report("Saved " + draft.FamilyID + " / " + draft.AssemblyPN +
+    (stored ? ". Active PLC recipe changes when sent." : " for this session. Export to keep a copy."),stored ? "good" : "warn");
+};
+el("send").onclick = ()=>{
+  const draft = draftFromForm();
+  if (cell.state === "running") {
+    report("PLC write blocked. Cell is running. Active tags retained.","bad");
+    return;
+  }
+  if (!writeAllowed()) return;
+  const saved = catalog.get(selectedPN);
+  if (adding || !saved || draft.FamilyID !== saved.FamilyID || draft.AssemblyPN !== selectedPN) {
+    report("Save new recipe identifiers before sending to the PLC.","warn");
+    return;
+  }
+  try {
+    const active = cell.load(draft);
+    playback.elapsed = null;
+    report("PLC accepted "+draft.FamilyID+" / "+draft.AssemblyPN+" · Revision "+active.revision,"good");
+  } catch (error) {
+    report("PLC rejected recipe. "+error.message+" Active tags retained.","bad");
+  }
+  renderCell();
+  if (!el("tag-details").hidden) renderTags();
+};
+
+const importDialog = el("import-dialog");
+for (const button of document.querySelectorAll("[data-import]")) {
+  button.onclick = ()=>importDialog.showModal();
+}
+el("close-import").onclick = ()=>importDialog.close();
+el("file").onchange = async ()=>{
+  const attempt = ++upload;
+  const file = el("file").files[0];
+  pending = null;
+  el("preview").hidden = true;
+  el("import-status").classList.remove("error");
+  say("import-status",file ? "Reading " + file.name + "…" : "");
+  renderCell();
+  if (!file) return;
+  try {
+    const rows = await readRecipes(file);
+    if (attempt !== upload) return;
+    pending = {rows,name:file.name};
+    const unique = key=>new Set([...rows.values()].map(recipe=>recipe[key])).size;
+    say("preview-title",rows.size+" part numbers · "+unique("FamilyID")+" families · "+unique("FlangePN")+" flanges");
+    table(el("preview-table"),["Family","Assembly P/N","Flange P/N","Stamp (s)"],[...rows.values()].slice(0,3)
+      .map(recipe=>[recipe.FamilyID,recipe.AssemblyPN,recipe.FlangePN,recipe.Etch_s]));
+    el("preview").hidden = false;
+    say("import-status",catalog.size ? "Workbook valid. Loading replaces the saved catalog in this HMI." : "Workbook valid. Load the catalog to select recipes.");
+  } catch (error) {
+    if (attempt !== upload) return;
+    say("import-status","Import rejected. "+error.message);
+    el("import-status").classList.add("error");
+    report(el("import-status").textContent,"bad");
+  }
+  renderCell();
+};
+el("load").onclick = ()=>{
+  if (!pending || !writeAllowed()) return;
+  if (!mayDiscard()) return;
+  if (catalog.size && !window.confirm("Replace the saved recipe catalog with this workbook?")) return;
+  catalog = pending.rows;
+  sourceName = pending.name;
+  pending = null;
+  groupFamilies();
+  const stored = persist();
+  el("file").value = "";
+  el("preview").hidden = true;
+  say("import-status","Loaded "+sourceName);
+  viewRecipe("");
+  report("Loaded "+catalog.size+" part numbers from "+sourceName+(stored ? "." : " for this session."),"good");
+  importDialog.close();
+  renderCell();
+};
+function download(blob,name) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),30_000);
+}
+el("template").onclick = ()=>{
+  const data = Uint8Array.from(atob(el("workbook").textContent.trim()),char=>char.charCodeAt(0));
+  download(new Blob([data],{type:xlsxMime}),"Cell_730_Recipes.xlsx");
+};
+el("export").onclick = ()=>{
+  if (!catalog.size) return;
+  if (hasEdits()) {
+    report("Save or revert your draft before exporting the catalog.","warn");
+    return;
+  }
+  download(makeWorkbook(catalog),"Cell_730_Recipe_Export.xlsx");
+  report("Exported "+catalog.size+" saved recipes to Excel.","good");
+};
+
+try {
+  const stored = JSON.parse(localStorage.getItem(storageKey) ?? "null");
+  if (stored) {
+    catalog = validateCatalog(stored.rows);
+    sourceName = stored.sourceName || "local HMI";
+    groupFamilies();
+    report("Restored "+catalog.size+" saved part numbers from "+sourceName+". Load a recipe to start.");
+  }
+} catch {
+  report("Saved catalog could not be restored. Import a workbook to begin.","warn");
+}
+viewRecipe("");
+navigate("cell");
+buildPlcView();
+renderCell();
+</script>
+<script type="application/octet-stream" id="workbook">
+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
+</script>
+</body>
+</html>
